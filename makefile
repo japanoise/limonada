@@ -5,7 +5,7 @@ PROGNAME=spr
 all: $(PROGNAME)
 
 $(PROGNAME): slice.o main.o cp437.xpm
-	$(CC) $(LDFLAGS) main.o slice.o -o $@
+	$(CC) -o $@ main.o slice.o $(LDFLAGS)
 
 cp437.xpm: cp437.png
 	convert $< $@
