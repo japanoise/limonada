@@ -11,6 +11,8 @@
 #define WINHEIGHT 600
 #define LETHEIGHT 12
 #define LETWIDTH 6
+#define BGCOL SDL_SetRenderDrawColor(rend, COL_BG)
+#define FGCOL SDL_SetRenderDrawColor(rend, COL_FG)
 
 void drawText(SDL_Renderer *rend, char *text, SDL_Texture *font, int x, int y) {
 	SDL_Rect srcrect = {0,0,LETWIDTH,LETHEIGHT};
@@ -24,17 +26,50 @@ void drawText(SDL_Renderer *rend, char *text, SDL_Texture *font, int x, int y) {
 	}
 }
 
+typedef SDL_bool (*menuItemCallback)(SDL_Renderer *rend, SDL_Texture *font);
+
+SDL_bool actionQuit(SDL_Renderer* rend, SDL_Texture* font) {
+	return SDL_FALSE;
+}
+
+typedef struct {
+	StrSlice **entries;
+	menuItemCallback *callbacks;
+	int nentries;
+	int width;
+} submenu;
+
 typedef struct {
 	StrSlice **titles;
+	submenu **submenus;
 	int ntitles;
+	int vis;
 } menubar;
 
 menubar *makeMenuBar(char **titles, int ntitles) {
 	menubar *ret = malloc(sizeof(menubar));
+	ret->submenus = malloc(sizeof(submenu**)*ntitles);
 	ret->titles = malloc(sizeof(StrSlice**)*ntitles);
 	ret->ntitles = ntitles;
+	ret->vis = -1;
 	for(int i = 0; i<ntitles; i++) {
 		ret->titles[i]=MakeSlice(titles[i]);
+	}
+	return ret;
+}
+
+submenu *makeSubmenu(char **entries, int nentries) {
+	submenu *ret = malloc(sizeof(submenu));
+	ret->entries = malloc(sizeof(StrSlice**)*nentries);
+	ret->callbacks = malloc(sizeof(menuItemCallback)*nentries);
+	ret->nentries = nentries;
+	ret->width = 0;
+	for(int i=0; i<nentries; i++) {
+		ret->entries[i]=MakeSlice(entries[i]);
+		if(ret->entries[i]->len > ret->width) {
+			ret->width = ret->entries[i]->len;
+		}
+		ret->callbacks[i] = NULL;
 	}
 	return ret;
 }
@@ -50,6 +85,28 @@ void drawMenuBar(menubar *m, SDL_Renderer *rend, SDL_Texture *font, int mx, int 
 		if (my < LETHEIGHT && mx >=ox && mx < ix) {
 			SDL_Rect r = {ox, 0, ix-ox, LETHEIGHT+2};
 			SDL_RenderDrawRect(rend, &r);
+			if (m->vis != -1) {
+				m->vis = i;
+			}
+		}
+		if (m->vis == i && m->submenus[i] != NULL){
+			BGCOL;
+			int smw = (m->submenus[i]->width*LETWIDTH)+4;
+			SDL_Rect rect = {ox, LETHEIGHT+2, smw,
+		        	2+(LETHEIGHT*m->submenus[i]->nentries)};
+			SDL_RenderFillRect(rend, &rect);
+			FGCOL;
+			SDL_RenderDrawRect(rend, &rect);
+			for(int j=0; j<m->submenus[i]->nentries; j++) {
+				int iy = LETHEIGHT+3+(j*LETHEIGHT);
+				drawText(rend, m->submenus[i]->entries[j]->String,
+					font, ox+2, iy);
+				if (ox <= mx && mx <= ox+smw && iy <= my && my <= iy+LETHEIGHT) {
+					rect.y=iy;
+					rect.h=LETHEIGHT;
+					SDL_RenderDrawRect(rend, &rect);
+				}
+			}
 		}
 	}
 }
@@ -60,6 +117,47 @@ SDL_Texture* loadFont(SDL_Renderer *rend) {
 	SDL_Texture *ret = SDL_CreateTextureFromSurface(rend, font);
 	SDL_FreeSurface(font);
 	return ret;
+}
+
+SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, menubar *m, int mx, int my, Uint8 button) {
+	if (my <= LETHEIGHT + 2) {
+		// Clicked on the menubar
+		int ix=0;
+		int ox=0;
+		for (int i = 0; i<m->ntitles; i++) {
+			ox = ix;
+			ix += (m->titles[i]->len+1)*LETWIDTH;
+			if (mx >=ox && mx < ix) {
+				m->vis=i;
+				return SDL_TRUE;
+			}
+		}
+	} else if (m->vis != -1) {
+		// A submenu is visible
+		int smw = (m->submenus[m->vis]->width*LETWIDTH)+4;
+		int ox = 0;
+		for (int i = 0; i<m->vis; i++) ox+=(m->titles[i]->len+1)*LETWIDTH;
+
+		if (ox <= mx && mx <= ox+smw) {
+			int iy = LETHEIGHT+3;
+			int oy = 0;
+			for(int j=0; j<m->submenus[m->vis]->nentries; j++) {
+				oy = iy;
+				iy += LETHEIGHT;
+				if (oy <= my && my <= iy) {
+					if (m->submenus[m->vis]->callbacks[j]!=NULL) {
+						int sel = m->vis;
+						m->vis=-1;
+						return (*m->submenus[sel]->callbacks[j])(rend, font);
+					}
+					m->vis=-1;
+					return SDL_TRUE;
+				}
+			}
+		}
+	}
+	m->vis=-1;
+	return SDL_TRUE;
 }
 
 int main(int argc, char **argv) {
@@ -85,14 +183,21 @@ int main(int argc, char **argv) {
 	my = -1;
 	char *titles[] = {"File","Edit","Help"};
 	menubar *m = makeMenuBar(titles, 3);
+	char *fileentries[] = {"Open", "Import", "Save", "Export", "Quit"};
+	m->submenus[0] = makeSubmenu(fileentries, 5);
+	m->submenus[0]->callbacks[4] = *actionQuit;
+	char *editentries[] = {"Copy", "Paste"};
+	m->submenus[1] = makeSubmenu(editentries, 2);
+	char *helpentries[] = {"On-Line Help", "About..."};
+	m->submenus[2] = makeSubmenu(helpentries, 2);
 
 	// main loop
 	SDL_bool running = SDL_TRUE;
 	while (running) {
 		// draw the window
-		SDL_SetRenderDrawColor(rend, COL_BG);
+		BGCOL;
 		SDL_RenderClear(rend);
-		SDL_SetRenderDrawColor(rend, COL_FG);
+		FGCOL;
 		drawMenuBar(m, rend, font, mx, my);
 		SDL_RenderPresent(rend);
 
@@ -108,6 +213,12 @@ int main(int argc, char **argv) {
 				fprintf(stdout, "main: %s\n", "got keydown event");
 				break;
 
+			case SDL_MOUSEBUTTONDOWN:
+				mx = event.button.x;
+				my = event.button.y;
+				running = click(rend, font, m, mx, my, event.button.button);
+				break;
+
 			case SDL_MOUSEMOTION:
 				mx = event.motion.x;
 				my = event.motion.y;
@@ -121,3 +232,9 @@ int main(int argc, char **argv) {
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 }
+
+/* Local Variables: */
+/* c-basic-offset: 8 */
+/* tab-width: 8 */
+/* indent-tabs-mode: t */
+/* End: */
