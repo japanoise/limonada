@@ -4,7 +4,7 @@
 #include "slice.h"
 #include "cp437.xpm"
 
-#define TITLE "Sprite"
+#define TITLE "Limonada"
 #define COL_BG 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE
 #define COL_FG 0, 0, 0, SDL_ALPHA_OPAQUE
 #define WINWIDTH 800
