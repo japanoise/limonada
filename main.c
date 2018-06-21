@@ -9,12 +9,13 @@
 #define TITLE "Limonada"
 #define COL_BG 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE
 #define COL_FG 0, 0, 0, SDL_ALPHA_OPAQUE
-#define WINWIDTH 800
-#define WINHEIGHT 600
 #define LETHEIGHT 12
 #define LETWIDTH 6
 #define BGCOL SDL_SetRenderDrawColor(rend, COL_BG)
 #define FGCOL SDL_SetRenderDrawColor(rend, COL_FG)
+
+int WINWIDTH  = 800;
+int WINHEIGHT = 600;
 
 void drawText(SDL_Renderer *rend, char *text, SDL_Texture *font, int x, int y) {
 	SDL_Rect srcrect = {0,0,LETWIDTH,LETHEIGHT};
@@ -231,7 +232,8 @@ int main(int argc, char *argv[]) {
 
 	// get the window
 	SDL_Window *window = SDL_CreateWindow(TITLE, SDL_WINDOWPOS_UNDEFINED,
-		SDL_WINDOWPOS_UNDEFINED, WINWIDTH, WINHEIGHT, SDL_WINDOW_SHOWN);
+		SDL_WINDOWPOS_UNDEFINED, WINWIDTH, WINHEIGHT, SDL_WINDOW_SHOWN
+		|SDL_WINDOW_RESIZABLE);
 	if (!window) {
 		fprintf(stderr, "main: %s\n", SDL_GetError());
 		return 1;
@@ -289,6 +291,10 @@ int main(int argc, char *argv[]) {
 			case SDL_MOUSEMOTION:
 				mx = event.motion.x;
 				my = event.motion.y;
+				break;
+
+			case SDL_WINDOWEVENT:
+				SDL_GetWindowSize(window, &WINWIDTH, &WINHEIGHT);
 				break;
 			}
 		}
