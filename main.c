@@ -195,6 +195,7 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 				if (global->curbuf >= global->buffers->len) {
 					global->curbuf = global->buffers->len - 1;
 				}
+				global->buffers->data[global->curbuf]->changedp=1;
 				return SDL_TRUE;
 			}
 		}
@@ -207,6 +208,9 @@ void usage(char *argv0) {
 	fprintf(stderr, "usage: %s [files...]\n", argv0);
 	exit(1);
 }
+
+#define DRAWAREAANCHOR (2*LETHEIGHT)+5
+#define DRAWAREASNIP WINHEIGHT-DRAWAREAANCHOR
 
 int main(int argc, char *argv[]) {
 	// parse args
@@ -258,6 +262,9 @@ int main(int argc, char *argv[]) {
 	m->submenus[1] = makeSubmenu(editentries, 2);
 	char *helpentries[] = {"On-Line Help", "About..."};
 	m->submenus[2] = makeSubmenu(helpentries, 2);
+	SDL_Texture *curtext;
+	SDL_Rect drawArea = {0, DRAWAREAANCHOR, WINWIDTH, DRAWAREASNIP};
+	SDL_Rect sprArea;
 
 	// main loop
 	SDL_bool running = SDL_TRUE;
@@ -266,6 +273,14 @@ int main(int argc, char *argv[]) {
 		BGCOL;
 		SDL_RenderClear(rend);
 		FGCOL;
+		if (global->curbuf != -1) {
+			buffer *buf = global->buffers->data[global->curbuf];
+			if (buf->data!=NULL && buf->changedp) {
+				buf->changedp = 0;
+				curtext = textureFromBuffer(buf, rend);
+			}
+			SDL_RenderCopy(rend, curtext, NULL, &drawArea);
+		}
 		drawTabBar(rend, font, global, mx, my);
 		drawMenuBar(m, rend, font, mx, my);
 		SDL_RenderPresent(rend);
@@ -295,6 +310,8 @@ int main(int argc, char *argv[]) {
 
 			case SDL_WINDOWEVENT:
 				SDL_GetWindowSize(window, &WINWIDTH, &WINHEIGHT);
+				drawArea.w=WINWIDTH;
+				drawArea.h=DRAWAREASNIP;
 				break;
 			}
 		}
