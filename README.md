@@ -56,10 +56,7 @@ you off.
 
 ## credits
 
-[Font is tewi2a by lucy.](https://github.com/lucy/tewi-font)
-
-[SDL install instructions from here.](https://github.com/veandco/go-sdl2)
-
-[Name suggested by PAUSE BREAK.](https://www.youtube.com/channel/UCLcDO-_j-ElBTrVcoaTfMKw)
-
-[Arg.h from suckless; 20h. Link leads to a GitHub mirror.](https://github.com/japanoise/arg.h)
+- [Font is tewi2a by lucy.](https://github.com/lucy/tewi-font)
+- [SDL install instructions from here.](https://github.com/veandco/go-sdl2)
+- [Name suggested by PAUSE BREAK.](https://www.youtube.com/channel/UCLcDO-_j-ElBTrVcoaTfMKw)
+- [Arg.h from suckless; 20h. Link leads to a GitHub mirror.](https://github.com/japanoise/arg.h)
