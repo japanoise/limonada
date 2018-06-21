@@ -4,6 +4,10 @@
 
 typedef struct {
 	StrSlice *name;
+	char *filename;
+	int zoom;
+	int panx;
+	int pany;
 } buffer;
 
 typedef struct {
@@ -20,6 +24,8 @@ typedef struct {
 buffer *makeBuffer(char *name);
 
 buffer *makeBufferFromFile(char *filename);
+
+void setBufferFileName(char *filename, buffer *buf);
 
 buflist *makeBuflist();
 
