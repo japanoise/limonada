@@ -1,10 +1,34 @@
 #include <stdlib.h>
+#ifdef _WIN32
+#include <string.h>
+// Untested
+char *basename(char *path) {
+	int l = strlen(path);
+	char *fn = malloc(l);
+	char *ext = malloc(l);
+	_splitpath(path, NULL, NULL, fn, ext);
+	strcat(fn, ext);
+	free(ext);
+	return fn;
+}
+#else
+#include <libgen.h>
+#endif
 #include "slice.h"
 #include "state.h"
 
-buffer *makeBuffer(char *filename) {
+buffer *makeBuffer(char *name) {
 	buffer *ret = malloc(sizeof(buffer));
-	ret->name = MakeSlice(filename);
+	ret->name = MakeSlice(name);
+	return ret;
+}
+
+buffer *makeBufferFromFile(char *filename) {
+	char* bn = basename(filename);
+	buffer *ret = makeBuffer(bn);
+#ifdef _WIN32
+	free(bn);
+#endif
 	return ret;
 }
 
@@ -43,7 +67,7 @@ void killBufferInList(buflist *list, int which){
 buflist *makeBuflistFromArgs(int argc, char *argv[]) {
 	buflist *ret = makeBuflist();
 	for (int i = 0; i < argc; i++) {
-		appendBuffer(ret, makeBuffer(argv[i]));
+		appendBuffer(ret, makeBufferFromFile(argv[i]));
 	}
 	return ret;
 }

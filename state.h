@@ -17,7 +17,9 @@ typedef struct {
 	int curbuf;
 } limonada;
 
-buffer *makeBuffer(char *filename);
+buffer *makeBuffer(char *name);
+
+buffer *makeBufferFromFile(char *filename);
 
 buflist *makeBuflist();
 
