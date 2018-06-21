@@ -104,7 +104,7 @@ void drawMenuBar(menubar *m, SDL_Renderer *rend, SDL_Texture *font, int mx, int 
 				int iy = LETHEIGHT+3+(j*LETHEIGHT);
 				drawText(rend, m->submenus[i]->entries[j]->String,
 					font, ox+2, iy);
-				if (ox <= mx && mx <= ox+smw && iy <= my && my <= iy+LETHEIGHT) {
+				if (ox <= mx && mx <= ox+smw && iy < my && my <= iy+LETHEIGHT) {
 					rect.y=iy;
 					rect.h=LETHEIGHT;
 					SDL_RenderDrawRect(rend, &rect);
@@ -114,7 +114,7 @@ void drawMenuBar(menubar *m, SDL_Renderer *rend, SDL_Texture *font, int mx, int 
 	}
 }
 
-void drawTabBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global, int mx, int my) {
+void drawTabBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar *m, int mx, int my) {
 	const int botanchor = (2*LETHEIGHT)+4;
 	SDL_RenderDrawLine(rend, 0, botanchor, WINWIDTH, botanchor);
 	int ix = 0;
@@ -128,8 +128,8 @@ void drawTabBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global, int mx,
 		if (i==global->curbuf) {
 			SDL_RenderDrawLine(rend, ox, botanchor-2, ix-1, botanchor-2);
 		}
-		if (LETHEIGHT+2 < my && my < botanchor && mx >=ox && mx < ix) {
-			SDL_Rect r = {ox, botanchor-LETHEIGHT-1, ix-ox, LETHEIGHT+1};
+		if (LETHEIGHT+2 < my && my < botanchor && mx >=ox && mx < ix && m->vis==-1) {
+			SDL_Rect r = {ox, botanchor-LETHEIGHT-1, ix-ox-1, LETHEIGHT+1};
 			SDL_RenderDrawRect(rend, &r);
 		}
 	}
@@ -152,7 +152,8 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 			ox = ix;
 			ix += (m->titles[i]->len+1)*LETWIDTH;
 			if (mx >=ox && mx < ix) {
-				m->vis=i;
+				if (i==m->vis) m->vis=-1;
+				else m->vis=i;
 				return SDL_TRUE;
 			}
 		}
@@ -281,7 +282,7 @@ int main(int argc, char *argv[]) {
 			}
 			SDL_RenderCopy(rend, curtext, NULL, &drawArea);
 		}
-		drawTabBar(rend, font, global, mx, my);
+		drawTabBar(rend, font, global, m, mx, my);
 		drawMenuBar(m, rend, font, mx, my);
 		SDL_RenderPresent(rend);
 
