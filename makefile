@@ -4,8 +4,8 @@ PROGNAME=limonada
 
 all: $(PROGNAME)
 
-$(PROGNAME): slice.o main.o cp437.xpm
-	$(CC) -o $@ main.o slice.o $(LDFLAGS)
+$(PROGNAME): slice.o main.o state.o cp437.xpm
+	$(CC) -o $@ main.o slice.o state.o $(LDFLAGS)
 
 cp437.xpm: cp437.png
 	convert $< $@

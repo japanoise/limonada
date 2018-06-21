@@ -1,7 +1,9 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdlib.h>
+#include "arg.h"
 #include "slice.h"
+#include "state.h"
 #include "cp437.xpm"
 
 #define TITLE "Limonada"
@@ -26,9 +28,9 @@ void drawText(SDL_Renderer *rend, char *text, SDL_Texture *font, int x, int y) {
 	}
 }
 
-typedef SDL_bool (*menuItemCallback)(SDL_Renderer *rend, SDL_Texture *font);
+typedef SDL_bool (*menuItemCallback)(SDL_Renderer *rend, SDL_Texture *font, limonada *global);
 
-SDL_bool actionQuit(SDL_Renderer* rend, SDL_Texture* font) {
+SDL_bool actionQuit(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 	return SDL_FALSE;
 }
 
@@ -111,6 +113,27 @@ void drawMenuBar(menubar *m, SDL_Renderer *rend, SDL_Texture *font, int mx, int 
 	}
 }
 
+void drawTabBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global, int mx, int my) {
+	const int botanchor = (2*LETHEIGHT)+4;
+	SDL_RenderDrawLine(rend, 0, botanchor, WINWIDTH, botanchor);
+	int ix = 0;
+	int ox = 0;
+	for (int i=0; i<global->buffers->len; i++) {
+		StrSlice *bufname = global->buffers->data[i]->name;
+		drawText(rend, bufname->String, font, ix+2, botanchor-LETHEIGHT);
+		ox = ix;
+		ix += (bufname->len+1)*LETWIDTH+2;
+		SDL_RenderDrawLine(rend, ix-1, botanchor-LETHEIGHT-1, ix-1, botanchor);
+		if (i==global->curbuf) {
+			SDL_RenderDrawLine(rend, ox, botanchor-2, ix-1, botanchor-2);
+		}
+		if (LETHEIGHT+2 < my && my < botanchor && mx >=ox && mx < ix) {
+			SDL_Rect r = {ox, botanchor-LETHEIGHT-1, ix-ox, LETHEIGHT+1};
+			SDL_RenderDrawRect(rend, &r);
+		}
+	}
+}
+
 SDL_Texture* loadFont(SDL_Renderer *rend) {
 	SDL_Surface *font;
 	font = IMG_ReadXPMFromArray(cp437);
@@ -119,7 +142,7 @@ SDL_Texture* loadFont(SDL_Renderer *rend) {
 	return ret;
 }
 
-SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, menubar *m, int mx, int my, Uint8 button) {
+SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar *m, int mx, int my, Uint8 button) {
 	if (my <= LETHEIGHT + 2) {
 		// Clicked on the menubar
 		int ix=0;
@@ -148,11 +171,30 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, menubar *m, int mx, int my
 					if (m->submenus[m->vis]->callbacks[j]!=NULL) {
 						int sel = m->vis;
 						m->vis=-1;
-						return (*m->submenus[sel]->callbacks[j])(rend, font);
+						return (*m->submenus[sel]->callbacks[j])(rend, font, global);
 					}
 					m->vis=-1;
 					return SDL_TRUE;
 				}
+			}
+		}
+	} else if (my <= (2*LETHEIGHT)+4) {
+		// Clicked on the tab bar
+		int ix = 0;
+		int ox = 0;
+		for (int i=0; i<global->buffers->len; i++) {
+			ox = ix;
+			ix += (global->buffers->data[i]->name->len+1)*LETWIDTH+2;
+			if (mx >=ox && mx < ix) {
+				if (button == SDL_BUTTON_MIDDLE) {
+					killBufferInList(global->buffers, i);
+				} else if (button == SDL_BUTTON_LEFT) {
+					global->curbuf = i;
+				}
+				if (global->curbuf >= global->buffers->len) {
+					global->curbuf = global->buffers->len - 1;
+				}
+				return SDL_TRUE;
 			}
 		}
 	}
@@ -160,7 +202,31 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, menubar *m, int mx, int my
 	return SDL_TRUE;
 }
 
-int main(int argc, char **argv) {
+void usage(char *argv0) {
+	fprintf(stderr, "usage: %s [files...]\n", argv0);
+	exit(1);
+}
+
+int main(int argc, char *argv[]) {
+	// parse args
+	char *argv0 = argv[0];
+	ARGBEGIN {
+		case 'h':
+		default:
+			usage(argv0);
+	} ARGEND;
+
+	// initialise state
+	limonada *global;
+	if (argc>0) {
+		buflist *buffers = makeBuflistFromArgs(argc, argv);
+		global = makeState(buffers);
+	} else {
+		buflist *buffers = makeBuflist();
+		global = makeState(buffers);
+	}
+
+	// init sdl
 	SDL_Init(SDL_INIT_EVERYTHING);
 
 	// get the window
@@ -198,6 +264,7 @@ int main(int argc, char **argv) {
 		BGCOL;
 		SDL_RenderClear(rend);
 		FGCOL;
+		drawTabBar(rend, font, global, mx, my);
 		drawMenuBar(m, rend, font, mx, my);
 		SDL_RenderPresent(rend);
 
@@ -216,7 +283,7 @@ int main(int argc, char **argv) {
 			case SDL_MOUSEBUTTONDOWN:
 				mx = event.button.x;
 				my = event.button.y;
-				running = click(rend, font, m, mx, my, event.button.button);
+				running = click(rend, font, global, m, mx, my, event.button.button);
 				break;
 
 			case SDL_MOUSEMOTION:

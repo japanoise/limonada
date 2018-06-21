@@ -4,7 +4,13 @@
 
 StrSlice *MakeSlice(char *str) {
 	StrSlice *ret = malloc(sizeof(StrSlice));
-	ret->String = str;
 	ret->len = strlen(str);
+	ret->String = malloc(ret->len);
+	strcpy(ret->String, str);
 	return ret;
+}
+
+void DestroySlice(StrSlice *s) {
+	free(s->String);
+	free(s);
 }
