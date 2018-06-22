@@ -8,11 +8,14 @@
 
 #define TITLE "Limonada"
 #define COL_BG 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE
+#define GREY 0x88
+#define GREY_BG GREY, GREY, GREY, SDL_ALPHA_OPAQUE
 #define COL_FG 0, 0, 0, SDL_ALPHA_OPAQUE
 #define LETHEIGHT 12
 #define LETWIDTH 6
 #define BGCOL SDL_SetRenderDrawColor(rend, COL_BG)
 #define FGCOL SDL_SetRenderDrawColor(rend, COL_FG)
+#define GREYCOL SDL_SetRenderDrawColor(rend, GREY_BG)
 
 #define LEFTBARWIDTH 0
 #define RIGHTBARWIDTH 0
@@ -390,6 +393,7 @@ int main(int argc, char *argv[]) {
 	m->submenus[1] = makeSubmenu(editentries, 2);
 	char *helpentries[] = {"On-Line Help", "About..."};
 	m->submenus[2] = makeSubmenu(helpentries, 2);
+	SDL_Rect paintArea = {LEFTBARWIDTH, TOBBARHEIGHT, DRAWAREAWIDTH, DRAWAREAHEIGHT};
 
 	// main loop
 	SDL_bool running = SDL_TRUE;
@@ -397,6 +401,8 @@ int main(int argc, char *argv[]) {
 		// draw the window
 		BGCOL;
 		SDL_RenderClear(rend);
+		GREYCOL;
+		SDL_RenderFillRect(rend, &paintArea);
 		FGCOL;
 		if (global->curbuf != -1) {
 			drawBuffer(rend, global);
@@ -486,8 +492,8 @@ int main(int argc, char *argv[]) {
 
 			case SDL_WINDOWEVENT:
 				SDL_GetWindowSize(window, &WINWIDTH, &WINHEIGHT);
-				drawArea.w=WINWIDTH;
-				drawArea.h=DRAWAREAHEIGHT;
+				paintArea.w=DRAWAREAWIDTH;
+				paintArea.h=DRAWAREAHEIGHT;
 				break;
 			}
 		}
