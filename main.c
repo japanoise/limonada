@@ -151,9 +151,12 @@ char stat_size[BUFSIZE];
 int stat_size_len=0;
 char stat_xy[BUFSIZE];
 int stat_xy_len=0;
+#define ZOOMSIZE 10
+char stat_zoom[ZOOMSIZE];
+int stat_zoom_len=0;
 int px = 0;
 int py = 0;
-#define UPDATEPXPY px=buf->panx+((mx-LEFTBARWIDTH)/buf->zoom); py=buf->pany+((my-TOBBARHEIGHT)/buf->zoom);stat_xy_len=snprintf(stat_xy, BUFSIZE, "%i,%i", px, py);
+#define UPDATEPXPY px=buf->panx+((mx-LEFTBARWIDTH)/buf->zoom); py=buf->pany+((my-TOBBARHEIGHT)/buf->zoom);stat_xy_len=snprintf(stat_xy, BUFSIZE, "%i,%i", px, py);stat_zoom_len=snprintf(stat_zoom, ZOOMSIZE, "%i%%", buf->zoom*100);
 
 void drawStatBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global) {
 	int anchor = WINHEIGHT-BOTBARHEIGHT;
@@ -167,8 +170,15 @@ void drawStatBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global) {
 	buffer *buf = global->buffers->data[global->curbuf];
 	drawText(rend, buf->name->String, font, ix, anchor+1);
 	ix += (buf->name->len+1)*LETWIDTH;
+	drawText(rend, "(", font, ix, anchor+1);
+	ix+=LETWIDTH;
 	drawText(rend, stat_size, font, ix, anchor+1);
-	ix += (stat_size_len+1)*LETWIDTH;
+	ix += (stat_size_len)*LETWIDTH;
+	drawText(rend, ")", font, ix, anchor+1);
+	ix+= LETWIDTH*2;
+	drawText(rend, "Zoom: ", font, ix, anchor+1);
+	ix += 6*LETWIDTH;
+	drawText(rend, stat_zoom, font, ix, anchor+1);
 	drawText(rend, stat_xy, font, WINWIDTH-(stat_xy_len*LETWIDTH), anchor+1);
 }
 
