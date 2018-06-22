@@ -190,13 +190,18 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 			if (mx >=ox && mx < ix) {
 				if (button == SDL_BUTTON_MIDDLE) {
 					killBufferInList(global->buffers, i);
+					if (global->buffers->len == 0) {
+						global->curbuf = -1;
+					}
 				} else if (button == SDL_BUTTON_LEFT) {
 					global->curbuf = i;
 				}
 				if (global->curbuf >= global->buffers->len) {
 					global->curbuf = global->buffers->len - 1;
 				}
-				global->buffers->data[global->curbuf]->changedp=1;
+				if (global->curbuf != -1) {
+					global->buffers->data[global->curbuf]->changedp=1;
+				}
 				return SDL_TRUE;
 			}
 		}

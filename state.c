@@ -40,6 +40,7 @@ buflist *makeBuflistFromArgs(int argc, char *argv[]) {
 
 limonada *makeState(buflist *list) {
 	limonada *ret = malloc(sizeof(limonada));
+	ret->curbuf = -1;
 	ret->buffers = list;
 	if (list->len > 0) {
 		ret->curbuf=0;
