@@ -334,6 +334,22 @@ int main(int argc, char *argv[]) {
 			case SDL_MOUSEMOTION:
 				mx = event.motion.x;
 				my = event.motion.y;
+				// If middle button, pan the image
+				if (global->curbuf != -1 && event.motion.state&SDL_BUTTON_MMASK) {
+					buffer *buf = global->buffers->data[global->curbuf];
+					buf->panx += event.motion.xrel;
+					buf->pany += event.motion.yrel;
+					if (buf->panx > buf->sizex) {
+						buf->panx = buf->sizex;
+					} else if (buf->panx < 0) {
+						buf->panx = 0;
+					}
+					if (buf->pany > buf->sizey) {
+						buf->pany = buf->sizey;
+					} else if (buf->pany < 0) {
+						buf->pany = 0;
+					}
+				}
 				break;
 
 			case SDL_WINDOWEVENT:
