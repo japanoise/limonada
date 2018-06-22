@@ -457,8 +457,8 @@ int main(int argc, char *argv[]) {
 					buffer *buf = global->buffers->data[global->curbuf];
 					if (event.motion.state&SDL_BUTTON_MMASK) {
 						// If middle button, pan the image
-						buf->panx += event.motion.xrel;
-						buf->pany += event.motion.yrel;
+						buf->panx -= event.motion.xrel;
+						buf->pany -= event.motion.yrel;
 						if (buf->panx > buf->sizex) {
 							buf->panx = buf->sizex;
 						} else if (buf->panx < 0) {
