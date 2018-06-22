@@ -172,6 +172,44 @@ void drawStatBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global) {
 	drawText(rend, stat_xy, font, WINWIDTH-(stat_xy_len*LETWIDTH), anchor+1);
 }
 
+SDL_Rect drawArea = {LEFTBARWIDTH, TOBBARHEIGHT, 0, 0};
+SDL_Rect sprArea = {0, 0, 0, 0};
+SDL_Texture *curtext;
+
+void drawBuffer(SDL_Renderer* rend, limonada *global) {
+	buffer *buf = global->buffers->data[global->curbuf];
+	if (buf->data!=NULL && buf->changedp) {
+		buf->changedp = 0;
+		curtext = textureFromBuffer(buf, rend);
+		stat_size_len = snprintf(stat_size, BUFSIZE, "%i,%i", buf->sizex, buf->sizey);
+	}
+	int sizex = (buf->sizex-buf->panx)*buf->zoom;
+	int sizey = (buf->sizey-buf->pany)*buf->zoom;
+	sprArea.x = buf->panx;
+	sprArea.y = buf->pany;
+	if (sizey == DRAWAREAHEIGHT) {
+		drawArea.h = DRAWAREAHEIGHT;
+		sprArea.h = sizey;
+	} else if (sizey<DRAWAREAHEIGHT) {
+		sprArea.h = sizey;
+		drawArea.h = sizey;
+	} else if (sizey>DRAWAREAHEIGHT) {
+		drawArea.h = DRAWAREAHEIGHT;
+		sprArea.h = DRAWAREAHEIGHT/buf->zoom;
+	}
+	if (sizex == DRAWAREAWIDTH) {
+		drawArea.w = DRAWAREAWIDTH;
+		sprArea.w = sizex;
+	} else if (sizex<DRAWAREAWIDTH) {
+		sprArea.w = sizex;
+		drawArea.w = sizex;
+	} else if (sizex>DRAWAREAWIDTH) {
+		drawArea.w = DRAWAREAWIDTH;
+		sprArea.w = DRAWAREAWIDTH/buf->zoom;
+	}
+	SDL_RenderCopy(rend, curtext, &sprArea, &drawArea);
+}
+
 SDL_Texture* loadFont(SDL_Renderer *rend) {
 	SDL_Surface *font;
 	font = IMG_ReadXPMFromArray(cp437);
@@ -247,6 +285,46 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 	return SDL_TRUE;
 }
 
+char mods = 0;
+
+void scroll(buffer *buf, SDL_Event event, int mx, int my) {
+	if (event.wheel.y > 0) {
+		// scroll up
+		if (mods&MODCTRL) {
+			buf->zoom*=2;
+		} else if (mods&MODSHIFT) {
+			buf->panx--;
+			if (buf->panx<0) {
+				buf->panx=0;
+			}
+		} else {
+			buf->pany--;
+			if (buf->pany<0) {
+				buf->pany=0;
+			}
+		}
+	} else if (event.wheel.y < 0) {
+		// scroll down
+		if (mods&MODCTRL) {
+			buf->zoom/=2;
+			if (buf->zoom <= 0) {
+				buf->zoom = 1;
+			}
+		} else if (mods&MODSHIFT) {
+			buf->panx++;
+			if (buf->panx > buf->sizex) {
+				buf->panx=buf->sizex;
+			}
+		} else {
+			buf->pany++;
+			if (buf->pany > buf->sizey) {
+				buf->pany=buf->sizey;
+			}
+		}
+	}
+	UPDATEPXPY;
+}
+
 void usage(char *argv0) {
 	fprintf(stderr, "usage: %s [files...]\n", argv0);
 	exit(1);
@@ -302,10 +380,6 @@ int main(int argc, char *argv[]) {
 	m->submenus[1] = makeSubmenu(editentries, 2);
 	char *helpentries[] = {"On-Line Help", "About..."};
 	m->submenus[2] = makeSubmenu(helpentries, 2);
-	SDL_Texture *curtext;
-	SDL_Rect drawArea = {LEFTBARWIDTH, TOBBARHEIGHT, DRAWAREAWIDTH, DRAWAREAHEIGHT};
-	SDL_Rect sprArea = {0, 0, 0, 0};
-	char mods = 0;
 
 	// main loop
 	SDL_bool running = SDL_TRUE;
@@ -315,37 +389,7 @@ int main(int argc, char *argv[]) {
 		SDL_RenderClear(rend);
 		FGCOL;
 		if (global->curbuf != -1) {
-			buffer *buf = global->buffers->data[global->curbuf];
-			if (buf->data!=NULL && buf->changedp) {
-				buf->changedp = 0;
-				curtext = textureFromBuffer(buf, rend);
-				stat_size_len = snprintf(stat_size, BUFSIZE, "%i,%i", buf->sizex, buf->sizey);
-			}
-			int sizex = (buf->sizex-buf->panx)*buf->zoom;
-			int sizey = (buf->sizey-buf->pany)*buf->zoom;
-			sprArea.x = buf->panx;
-			sprArea.y = buf->pany;
-			if (sizey == DRAWAREAHEIGHT) {
-				drawArea.h = DRAWAREAHEIGHT;
-				sprArea.h = sizey;
-			} else if (sizey<DRAWAREAHEIGHT) {
-				sprArea.h = sizey;
-				drawArea.h = sizey;
-			} else if (sizey>DRAWAREAHEIGHT) {
-				drawArea.h = DRAWAREAHEIGHT;
-				sprArea.h = DRAWAREAHEIGHT/buf->zoom;
-			}
-			if (sizex == DRAWAREAWIDTH) {
-				drawArea.w = DRAWAREAWIDTH;
-				sprArea.w = sizex;
-			} else if (sizex<DRAWAREAWIDTH) {
-				sprArea.w = sizex;
-				drawArea.w = sizex;
-			} else if (sizex>DRAWAREAWIDTH) {
-				drawArea.w = DRAWAREAWIDTH;
-				sprArea.w = DRAWAREAWIDTH/buf->zoom;
-			}
-			SDL_RenderCopy(rend, curtext, &sprArea, &drawArea);
+			drawBuffer(rend, global);
 		}
 		drawStatBar(rend, font, global);
 		drawTabBar(rend, font, global, m, mx, my);
@@ -396,41 +440,7 @@ int main(int argc, char *argv[]) {
 			case SDL_MOUSEWHEEL:
 				if (global->curbuf != -1) {
 					buffer *buf = global->buffers->data[global->curbuf];
-					if (event.wheel.y > 0) {
-						// scroll up
-						if (mods&MODCTRL) {
-							buf->zoom*=2;
-						} else if (mods&MODSHIFT) {
-							buf->panx--;
-							if (buf->panx<0) {
-								buf->panx=0;
-							}
-						} else {
-							buf->pany--;
-							if (buf->pany<0) {
-								buf->pany=0;
-							}
-						}
-					} else if (event.wheel.y < 0) {
-						// scroll down
-						if (mods&MODCTRL) {
-							buf->zoom/=2;
-							if (buf->zoom <= 0) {
-								buf->zoom = 1;
-							}
-						} else if (mods&MODSHIFT) {
-							buf->panx++;
-							if (buf->panx > buf->sizex) {
-								buf->panx=buf->sizex;
-							}
-						} else {
-							buf->pany++;
-							if (buf->pany > buf->sizey) {
-								buf->pany=buf->sizey;
-							}
-						}
-					}
-					UPDATEPXPY;
+					scroll(buf, event, mx, my);
 				}
 				break;
 
