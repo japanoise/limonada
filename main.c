@@ -14,6 +14,17 @@
 #define BGCOL SDL_SetRenderDrawColor(rend, COL_BG)
 #define FGCOL SDL_SetRenderDrawColor(rend, COL_FG)
 
+#define LEFTBARWIDTH 0
+#define RIGHTBARWIDTH 0
+#define TOBBARHEIGHT ((2*LETHEIGHT)+5)
+#define BOTBARHEIGHT (LETHEIGHT+1)
+#define DRAWAREAHEIGHT (WINHEIGHT-TOBBARHEIGHT-BOTBARHEIGHT)
+#define DRAWAREAWIDTH (WINWIDTH-LEFTBARWIDTH-RIGHTBARWIDTH)
+
+#define MODCTRL 1
+#define MODSHIFT 2
+#define MODALT 4
+
 int WINWIDTH  = 800;
 int WINHEIGHT = 600;
 
@@ -135,6 +146,32 @@ void drawTabBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar
 	}
 }
 
+#define BUFSIZE 20
+char stat_size[BUFSIZE];
+int stat_size_len=0;
+char stat_xy[BUFSIZE];
+int stat_xy_len=0;
+int px = 0;
+int py = 0;
+#define UPDATEPXPY px=buf->panx+((mx-LEFTBARWIDTH)/buf->zoom); py=buf->pany+((my-TOBBARHEIGHT)/buf->zoom);stat_xy_len=snprintf(stat_xy, BUFSIZE, "%i,%i", px, py);
+
+void drawStatBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global) {
+	int anchor = WINHEIGHT-BOTBARHEIGHT;
+	SDL_RenderDrawLine(rend, 0, anchor, WINWIDTH, anchor);
+	if (global->curbuf==-1) {
+		drawText(rend, "No buffers open.", font, 0, anchor+1);
+		return;
+	}
+
+	int ix = 0;
+	buffer *buf = global->buffers->data[global->curbuf];
+	drawText(rend, buf->name->String, font, ix, anchor+1);
+	ix += (buf->name->len+1)*LETWIDTH;
+	drawText(rend, stat_size, font, ix, anchor+1);
+	ix += (stat_size_len+1)*LETWIDTH;
+	drawText(rend, stat_xy, font, WINWIDTH-(stat_xy_len*LETWIDTH), anchor+1);
+}
+
 SDL_Texture* loadFont(SDL_Renderer *rend) {
 	SDL_Surface *font;
 	font = IMG_ReadXPMFromArray(cp437);
@@ -215,15 +252,6 @@ void usage(char *argv0) {
 	exit(1);
 }
 
-#define LEFTBARWIDTH 0
-#define RIGHTBARWIDTH 0
-#define TOBBARHEIGHT ((2*LETHEIGHT)+5)
-#define DRAWAREAHEIGHT (WINHEIGHT-TOBBARHEIGHT-1)
-#define DRAWAREAWIDTH (WINWIDTH-LEFTBARWIDTH-RIGHTBARWIDTH)
-#define MODCTRL 1
-#define MODSHIFT 2
-#define MODALT 4
-
 int main(int argc, char *argv[]) {
 	// parse args
 	char *argv0 = argv[0];
@@ -291,6 +319,7 @@ int main(int argc, char *argv[]) {
 			if (buf->data!=NULL && buf->changedp) {
 				buf->changedp = 0;
 				curtext = textureFromBuffer(buf, rend);
+				stat_size_len = snprintf(stat_size, BUFSIZE, "%i,%i", buf->sizex, buf->sizey);
 			}
 			int sizex = (buf->sizex-buf->panx)*buf->zoom;
 			int sizey = (buf->sizey-buf->pany)*buf->zoom;
@@ -318,6 +347,7 @@ int main(int argc, char *argv[]) {
 			}
 			SDL_RenderCopy(rend, curtext, &sprArea, &drawArea);
 		}
+		drawStatBar(rend, font, global);
 		drawTabBar(rend, font, global, m, mx, my);
 		drawMenuBar(m, rend, font, mx, my);
 		SDL_RenderPresent(rend);
@@ -400,6 +430,7 @@ int main(int argc, char *argv[]) {
 							}
 						}
 					}
+					UPDATEPXPY;
 				}
 				break;
 
@@ -412,21 +443,24 @@ int main(int argc, char *argv[]) {
 			case SDL_MOUSEMOTION:
 				mx = event.motion.x;
 				my = event.motion.y;
-				// If middle button, pan the image
-				if (global->curbuf != -1 && event.motion.state&SDL_BUTTON_MMASK) {
+				if (global->curbuf != -1) {
 					buffer *buf = global->buffers->data[global->curbuf];
-					buf->panx += event.motion.xrel;
-					buf->pany += event.motion.yrel;
-					if (buf->panx > buf->sizex) {
-						buf->panx = buf->sizex;
-					} else if (buf->panx < 0) {
-						buf->panx = 0;
+					if (event.motion.state&SDL_BUTTON_MMASK) {
+						// If middle button, pan the image
+						buf->panx += event.motion.xrel;
+						buf->pany += event.motion.yrel;
+						if (buf->panx > buf->sizex) {
+							buf->panx = buf->sizex;
+						} else if (buf->panx < 0) {
+							buf->panx = 0;
+						}
+						if (buf->pany > buf->sizey) {
+							buf->pany = buf->sizey;
+						} else if (buf->pany < 0) {
+							buf->pany = 0;
+						}
 					}
-					if (buf->pany > buf->sizey) {
-						buf->pany = buf->sizey;
-					} else if (buf->pany < 0) {
-						buf->pany = 0;
-					}
+					UPDATEPXPY;
 				}
 				break;
 
