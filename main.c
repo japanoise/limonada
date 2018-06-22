@@ -210,8 +210,11 @@ void usage(char *argv0) {
 	exit(1);
 }
 
-#define DRAWAREAANCHOR (2*LETHEIGHT)+5
-#define DRAWAREASNIP WINHEIGHT-DRAWAREAANCHOR
+#define LEFTBARWIDTH 0
+#define RIGHTBARWIDTH 0
+#define TOBBARHEIGHT ((2*LETHEIGHT)+5)
+#define DRAWAREAHEIGHT (WINHEIGHT-TOBBARHEIGHT-1)
+#define DRAWAREAWIDTH (WINWIDTH-LEFTBARWIDTH-RIGHTBARWIDTH)
 
 int main(int argc, char *argv[]) {
 	// parse args
@@ -264,8 +267,8 @@ int main(int argc, char *argv[]) {
 	char *helpentries[] = {"On-Line Help", "About..."};
 	m->submenus[2] = makeSubmenu(helpentries, 2);
 	SDL_Texture *curtext;
-	SDL_Rect drawArea = {0, DRAWAREAANCHOR, WINWIDTH, DRAWAREASNIP};
-	SDL_Rect sprArea;
+	SDL_Rect drawArea = {LEFTBARWIDTH, TOBBARHEIGHT, DRAWAREAWIDTH, DRAWAREAHEIGHT};
+	SDL_Rect sprArea = {0, 0, 0, 0};
 
 	// main loop
 	SDL_bool running = SDL_TRUE;
@@ -280,7 +283,31 @@ int main(int argc, char *argv[]) {
 				buf->changedp = 0;
 				curtext = textureFromBuffer(buf, rend);
 			}
-			SDL_RenderCopy(rend, curtext, NULL, &drawArea);
+			int sizex = buf->sizex-buf->panx;
+			int sizey = buf->sizey-buf->pany;
+			sprArea.x = buf->panx;
+			sprArea.y = buf->pany;
+			if (sizey == DRAWAREAHEIGHT) {
+				drawArea.h = DRAWAREAHEIGHT;
+				sprArea.h = sizey;
+			} else if (sizey<DRAWAREAHEIGHT) {
+				sprArea.h = sizey;
+				drawArea.h = sizey;
+			} else if (sizey>DRAWAREAHEIGHT) {
+				drawArea.h = DRAWAREAHEIGHT;
+				sprArea.h = DRAWAREAHEIGHT;
+			}
+			if (sizex == DRAWAREAWIDTH) {
+				drawArea.w = DRAWAREAWIDTH;
+				sprArea.w = sizex;
+			} else if (sizex<DRAWAREAWIDTH) {
+				sprArea.w = sizex;
+				drawArea.w = sizex;
+			} else if (sizex>DRAWAREAWIDTH) {
+				drawArea.w = DRAWAREAWIDTH;
+				sprArea.w = DRAWAREAWIDTH;
+			}
+			SDL_RenderCopy(rend, curtext, &sprArea, &drawArea);
 		}
 		drawTabBar(rend, font, global, m, mx, my);
 		drawMenuBar(m, rend, font, mx, my);
@@ -312,7 +339,7 @@ int main(int argc, char *argv[]) {
 			case SDL_WINDOWEVENT:
 				SDL_GetWindowSize(window, &WINWIDTH, &WINHEIGHT);
 				drawArea.w=WINWIDTH;
-				drawArea.h=DRAWAREASNIP;
+				drawArea.h=DRAWAREAHEIGHT;
 				break;
 			}
 		}
