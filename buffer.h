@@ -15,6 +15,7 @@ typedef struct {
 	int datachannels;
 	unsigned char *data;
 	char changedp;
+	char tool;
 } buffer;
 
 buffer *makeBuffer(char *name);

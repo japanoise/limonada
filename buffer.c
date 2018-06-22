@@ -32,6 +32,7 @@ buffer *makeBuffer(char *name) {
 	ret->datachannels = 4; // SDL RGBA
 	ret->data = NULL;
 	ret->changedp = 1; // Generate a new texture when ready
+	ret->tool = 0;
 	return ret;
 }
 

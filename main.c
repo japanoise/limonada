@@ -6,6 +6,7 @@
 #include "state.h"
 #include "cp437.xpm"
 #include "icon.xpm"
+#include "tools.xpm"
 
 #define TITLE "Limonada"
 #define COL_BG 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE
@@ -18,11 +19,12 @@
 #define FGCOL SDL_SetRenderDrawColor(rend, COL_FG)
 #define GREYCOL SDL_SetRenderDrawColor(rend, GREY_BG)
 
-#define LEFTBARWIDTH 0
+#define TOOLSIZE 16
+#define LEFTBARWIDTH ((TOOLSIZE*2)+1)
 #define RIGHTBARWIDTH 0
-#define TOBBARHEIGHT ((2*LETHEIGHT)+5)
+#define TOPBARHEIGHT ((2*LETHEIGHT)+5)
 #define BOTBARHEIGHT (LETHEIGHT+1)
-#define DRAWAREAHEIGHT (WINHEIGHT-TOBBARHEIGHT-BOTBARHEIGHT)
+#define DRAWAREAHEIGHT (WINHEIGHT-TOPBARHEIGHT-BOTBARHEIGHT)
 #define DRAWAREAWIDTH (WINWIDTH-LEFTBARWIDTH-RIGHTBARWIDTH)
 
 #define MODCTRL 1
@@ -150,6 +152,32 @@ void drawTabBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar
 	}
 }
 
+SDL_Rect toolsRect = {0, TOPBARHEIGHT, 2*TOOLSIZE, 5*TOOLSIZE};
+SDL_Rect selToolRect = {0, TOPBARHEIGHT, TOOLSIZE, TOOLSIZE};
+
+void drawToolBar(SDL_Renderer *rend, SDL_Texture *font, SDL_Texture *tool, limonada *global, int mx, int my) {
+	SDL_RenderDrawLine(rend, LEFTBARWIDTH-1, TOPBARHEIGHT, LEFTBARWIDTH-1, WINWIDTH-BOTBARHEIGHT);
+	SDL_RenderCopy(rend, tool, NULL, &toolsRect);
+	buffer *buf = global->buffers->data[global->curbuf];
+	if (1&buf->tool) {
+		selToolRect.x=TOOLSIZE;
+	} else {
+		selToolRect.x=0;
+	}
+	selToolRect.y = ((buf->tool/2)*TOOLSIZE)+TOPBARHEIGHT;
+	SDL_RenderDrawRect(rend, &selToolRect);
+	if (mx<LEFTBARWIDTH && TOPBARHEIGHT<my && my<TOPBARHEIGHT+(5*TOOLSIZE)) {
+		selToolRect.x=0;
+		selToolRect.y=(((my-TOPBARHEIGHT)/TOOLSIZE)*TOOLSIZE)+TOPBARHEIGHT;
+		if (mx>TOOLSIZE) {
+			selToolRect.x=TOOLSIZE;
+		}
+		GREYCOL;
+		SDL_RenderDrawRect(rend, &selToolRect);
+		FGCOL;
+	}
+}
+
 #define BUFSIZE 20
 char stat_size[BUFSIZE];
 int stat_size_len=0;
@@ -160,7 +188,7 @@ char stat_zoom[ZOOMSIZE];
 int stat_zoom_len=0;
 int px = 0;
 int py = 0;
-#define UPDATEPXPY px=buf->panx+((mx-LEFTBARWIDTH)/buf->zoom); py=buf->pany+((my-TOBBARHEIGHT)/buf->zoom);stat_xy_len=snprintf(stat_xy, BUFSIZE, "%i,%i", px, py);stat_zoom_len=snprintf(stat_zoom, ZOOMSIZE, "%i%%", buf->zoom*100);
+#define UPDATEPXPY px=buf->panx+((mx-LEFTBARWIDTH)/buf->zoom); py=buf->pany+((my-TOPBARHEIGHT)/buf->zoom);stat_xy_len=snprintf(stat_xy, BUFSIZE, "%i,%i", px, py);stat_zoom_len=snprintf(stat_zoom, ZOOMSIZE, "%i%%", buf->zoom*100);
 
 void drawStatBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global) {
 	int anchor = WINHEIGHT-BOTBARHEIGHT;
@@ -186,7 +214,7 @@ void drawStatBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global) {
 	drawText(rend, stat_xy, font, WINWIDTH-(stat_xy_len*LETWIDTH), anchor+1);
 }
 
-SDL_Rect drawArea = {LEFTBARWIDTH, TOBBARHEIGHT, 0, 0};
+SDL_Rect drawArea = {LEFTBARWIDTH, TOPBARHEIGHT, 0, 0};
 SDL_Rect sprArea = {0, 0, 0, 0};
 SDL_Texture *curtext;
 
@@ -227,7 +255,13 @@ void drawBuffer(SDL_Renderer* rend, limonada *global) {
 SDL_Texture* loadXpm(SDL_Renderer *rend, char **data) {
 	SDL_Surface *font;
 	font = IMG_ReadXPMFromArray(data);
+	if (!font) {
+		fprintf(stderr, "IMG_ReadXPMFromArray: %s\n", IMG_GetError());
+	}
 	SDL_Texture *ret = SDL_CreateTextureFromSurface(rend, font);
+	if (!ret) {
+		fprintf(stderr, "SDL_CreateTextureFromSurface: %s\n", SDL_GetError());
+	}
 	SDL_FreeSurface(font);
 	return ret;
 }
@@ -294,6 +328,13 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 				return SDL_TRUE;
 			}
 		}
+	} else if (global->curbuf!=1 && mx<LEFTBARWIDTH && TOPBARHEIGHT<my && my<TOPBARHEIGHT+(5*TOOLSIZE)) {
+		// Clicked on the toolbar
+		int seltool = ((my-TOPBARHEIGHT)/TOOLSIZE)*2;
+		if (mx>TOOLSIZE) {
+			seltool |= 1;
+		}
+		global->buffers->data[global->curbuf]->tool = seltool;
 	}
 	m->vis=-1;
 	return SDL_TRUE;
@@ -380,6 +421,7 @@ int main(int argc, char *argv[]) {
 
 	// load the font and icon
 	SDL_Texture *font = loadXpm(rend, cp437);
+	SDL_Texture *tool = loadXpm(rend, tools);
 	SDL_Surface *icons = IMG_ReadXPMFromArray(icon);
 	SDL_SetWindowIcon(window, icons);
 
@@ -396,7 +438,7 @@ int main(int argc, char *argv[]) {
 	m->submenus[1] = makeSubmenu(editentries, 2);
 	char *helpentries[] = {"On-Line Help", "About..."};
 	m->submenus[2] = makeSubmenu(helpentries, 2);
-	SDL_Rect paintArea = {LEFTBARWIDTH, TOBBARHEIGHT, DRAWAREAWIDTH, DRAWAREAHEIGHT};
+	SDL_Rect paintArea = {LEFTBARWIDTH, TOPBARHEIGHT, DRAWAREAWIDTH, DRAWAREAHEIGHT};
 
 	// main loop
 	SDL_bool running = SDL_TRUE;
@@ -410,6 +452,7 @@ int main(int argc, char *argv[]) {
 		if (global->curbuf != -1) {
 			drawBuffer(rend, global);
 		}
+		drawToolBar(rend, font, tool, global, mx, my);
 		drawStatBar(rend, font, global);
 		drawTabBar(rend, font, global, m, mx, my);
 		drawMenuBar(m, rend, font, mx, my);
