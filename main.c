@@ -5,6 +5,7 @@
 #include "slice.h"
 #include "state.h"
 #include "cp437.xpm"
+#include "icon.xpm"
 
 #define TITLE "Limonada"
 #define COL_BG 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE
@@ -223,9 +224,9 @@ void drawBuffer(SDL_Renderer* rend, limonada *global) {
 	SDL_RenderCopy(rend, curtext, &sprArea, &drawArea);
 }
 
-SDL_Texture* loadFont(SDL_Renderer *rend) {
+SDL_Texture* loadXpm(SDL_Renderer *rend, char **data) {
 	SDL_Surface *font;
-	font = IMG_ReadXPMFromArray(cp437);
+	font = IMG_ReadXPMFromArray(data);
 	SDL_Texture *ret = SDL_CreateTextureFromSurface(rend, font);
 	SDL_FreeSurface(font);
 	return ret;
@@ -377,8 +378,10 @@ int main(int argc, char *argv[]) {
 	// get the renderer
 	SDL_Renderer *rend = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-	// load the font
-	SDL_Texture *font = loadFont(rend);
+	// load the font and icon
+	SDL_Texture *font = loadXpm(rend, cp437);
+	SDL_Surface *icons = IMG_ReadXPMFromArray(icon);
+	SDL_SetWindowIcon(window, icons);
 
 	// Initialise the interface
 	int mx, my;
