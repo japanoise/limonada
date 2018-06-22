@@ -26,7 +26,7 @@ buffer *makeBuffer(char *name) {
 	ret->filename = NULL;
 	ret->panx = 0;
 	ret->pany = 0;
-	ret->zoom = 0;
+	ret->zoom = 1;
 	ret->sizex = 0;
 	ret->sizey = 0;
 	ret->datachannels = 4; // SDL RGBA

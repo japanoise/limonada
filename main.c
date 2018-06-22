@@ -220,6 +220,9 @@ void usage(char *argv0) {
 #define TOBBARHEIGHT ((2*LETHEIGHT)+5)
 #define DRAWAREAHEIGHT (WINHEIGHT-TOBBARHEIGHT-1)
 #define DRAWAREAWIDTH (WINWIDTH-LEFTBARWIDTH-RIGHTBARWIDTH)
+#define MODCTRL 1
+#define MODSHIFT 2
+#define MODALT 4
 
 int main(int argc, char *argv[]) {
 	// parse args
@@ -274,6 +277,7 @@ int main(int argc, char *argv[]) {
 	SDL_Texture *curtext;
 	SDL_Rect drawArea = {LEFTBARWIDTH, TOBBARHEIGHT, DRAWAREAWIDTH, DRAWAREAHEIGHT};
 	SDL_Rect sprArea = {0, 0, 0, 0};
+	char mods = 0;
 
 	// main loop
 	SDL_bool running = SDL_TRUE;
@@ -288,8 +292,8 @@ int main(int argc, char *argv[]) {
 				buf->changedp = 0;
 				curtext = textureFromBuffer(buf, rend);
 			}
-			int sizex = buf->sizex-buf->panx;
-			int sizey = buf->sizey-buf->pany;
+			int sizex = (buf->sizex-buf->panx)*buf->zoom;
+			int sizey = (buf->sizey-buf->pany)*buf->zoom;
 			sprArea.x = buf->panx;
 			sprArea.y = buf->pany;
 			if (sizey == DRAWAREAHEIGHT) {
@@ -300,7 +304,7 @@ int main(int argc, char *argv[]) {
 				drawArea.h = sizey;
 			} else if (sizey>DRAWAREAHEIGHT) {
 				drawArea.h = DRAWAREAHEIGHT;
-				sprArea.h = DRAWAREAHEIGHT;
+				sprArea.h = DRAWAREAHEIGHT/buf->zoom;
 			}
 			if (sizex == DRAWAREAWIDTH) {
 				drawArea.w = DRAWAREAWIDTH;
@@ -310,7 +314,7 @@ int main(int argc, char *argv[]) {
 				drawArea.w = sizex;
 			} else if (sizex>DRAWAREAWIDTH) {
 				drawArea.w = DRAWAREAWIDTH;
-				sprArea.w = DRAWAREAWIDTH;
+				sprArea.w = DRAWAREAWIDTH/buf->zoom;
 			}
 			SDL_RenderCopy(rend, curtext, &sprArea, &drawArea);
 		}
@@ -327,7 +331,76 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case SDL_KEYDOWN:
-				fprintf(stdout, "main: %s\n", "got keydown event");
+				switch (event.key.keysym.sym) {
+				case SDLK_RCTRL:
+				case SDLK_LCTRL:
+					mods|=MODCTRL;
+					break;
+				case SDLK_RSHIFT:
+				case SDLK_LSHIFT:
+					mods|=MODSHIFT;
+					break;
+				case SDLK_LALT:
+				case SDLK_RALT:
+					mods|=MODALT;
+					break;
+				}
+				break;
+
+			case SDL_KEYUP:
+				switch (event.key.keysym.sym) {
+				case SDLK_RCTRL:
+				case SDLK_LCTRL:
+					mods^=MODCTRL;
+					break;
+				case SDLK_RSHIFT:
+				case SDLK_LSHIFT:
+					mods^=MODSHIFT;
+					break;
+				case SDLK_LALT:
+				case SDLK_RALT:
+					mods^=MODALT;
+					break;
+				}
+
+			case SDL_MOUSEWHEEL:
+				if (global->curbuf != -1) {
+					buffer *buf = global->buffers->data[global->curbuf];
+					if (event.wheel.y > 0) {
+						// scroll up
+						if (mods&MODCTRL) {
+							buf->zoom*=2;
+						} else if (mods&MODSHIFT) {
+							buf->panx--;
+							if (buf->panx<0) {
+								buf->panx=0;
+							}
+						} else {
+							buf->pany--;
+							if (buf->pany<0) {
+								buf->pany=0;
+							}
+						}
+					} else if (event.wheel.y < 0) {
+						// scroll down
+						if (mods&MODCTRL) {
+							buf->zoom/=2;
+							if (buf->zoom <= 0) {
+								buf->zoom = 1;
+							}
+						} else if (mods&MODSHIFT) {
+							buf->panx++;
+							if (buf->panx > buf->sizex) {
+								buf->panx=buf->sizex;
+							}
+						} else {
+							buf->pany++;
+							if (buf->pany > buf->sizey) {
+								buf->pany=buf->sizey;
+							}
+						}
+					}
+				}
 				break;
 
 			case SDL_MOUSEBUTTONDOWN:
