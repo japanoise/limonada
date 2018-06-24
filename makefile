@@ -16,3 +16,4 @@ cp437.xpm: cp437.png
 clean:
 	rm -rf *.o
 	rm -rf $(PROGNAME)
+	rm -rf $(PROGNAME).exe
