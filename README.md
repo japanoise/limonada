@@ -10,22 +10,22 @@ Install sdl2 and sdl_image; build using makefile.
 
 ### gnu + linux
 
-On __Ubuntu 14.04 and above__, type:\
-`apt install libsdl2{,-image,-mixer,-ttf,-gfx}-dev`
+On __Ubuntu 14.04 and above and other Debian-based distros__, type:\
+`apt install libsdl2{,-image}-dev`
 
 On __Fedora 25 and above__, type:\
-`yum install SDL2{,_image,_mixer,_ttf,_gfx}-devel`
+`yum install SDL2{,_image}-devel`
 
 On __Arch Linux__, type:\
-`pacman -S sdl2{,_image,_mixer,_ttf,_gfx}`
+`pacman -S sdl2{,_image}`
 
 On __Gentoo__, type:\
-`emerge -av libsdl2 sdl2-{image,mixer,ttf,gfx}`
+`emerge -av libsdl2 sdl2-image`
 
 ### mac
 
 On __macOS__, install SDL2 via [Homebrew](http://brew.sh) like so:\
-`brew install sdl2{,_image,_mixer,_ttf,_gfx} pkg-config`
+`brew install sdl2{,_image} pkg-config`
 
 ### windows
 
@@ -42,10 +42,10 @@ On __Windows__,
 	* Inside the folder, copy the `i686-w64-mingw32` and/or `x86_64-w64-mingw32` depending on the architecture you chose into your mingw-w64 folder e.g. `C:\Program Files\mingw-w64\x86_64-6.3.0-win32-seh-rt_v5-rev1\mingw64`
 3. Setup Path environment variable
 	* Put your mingw-w64 binaries location into your system Path environment variable. e.g. `C:\Program Files\mingw-w64\x86_64-6.3.0-win32-seh-rt_v5-rev1\mingw64\bin` and `C:\Program Files\mingw-w64\x86_64-6.3.0-win32-seh-rt_v5-rev1\mingw64\x86_64-w64-mingw32\bin`
-4. You can repeat __Step 2__ for [SDL_image](https://www.libsdl.org/projects/SDL_image), [SDL_mixer](https://www.libsdl.org/projects/SDL_mixer), [SDL_ttf](https://www.libsdl.org/projects/SDL_ttf)
+4. You can repeat __Step 2__ for [SDL_image](https://www.libsdl.org/projects/SDL_image)
 
 * Or you can install SDL2 via [Msys2](https://msys2.github.io) like so:
-`pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2{,_image,_mixer,_ttf,_gfx}`
+`pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2{,_image}`
 
 ## license
 
