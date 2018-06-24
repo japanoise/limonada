@@ -158,23 +158,25 @@ SDL_Rect selToolRect = {0, TOPBARHEIGHT, TOOLSIZE, TOOLSIZE};
 void drawToolBar(SDL_Renderer *rend, SDL_Texture *font, SDL_Texture *tool, limonada *global, int mx, int my) {
 	SDL_RenderDrawLine(rend, LEFTBARWIDTH-1, TOPBARHEIGHT, LEFTBARWIDTH-1, WINWIDTH-BOTBARHEIGHT);
 	SDL_RenderCopy(rend, tool, NULL, &toolsRect);
-	buffer *buf = global->buffers->data[global->curbuf];
-	if (1&buf->tool) {
-		selToolRect.x=TOOLSIZE;
-	} else {
-		selToolRect.x=0;
-	}
-	selToolRect.y = ((buf->tool/2)*TOOLSIZE)+TOPBARHEIGHT;
-	SDL_RenderDrawRect(rend, &selToolRect);
-	if (mx<LEFTBARWIDTH && TOPBARHEIGHT<my && my<TOPBARHEIGHT+(5*TOOLSIZE)) {
-		selToolRect.x=0;
-		selToolRect.y=(((my-TOPBARHEIGHT)/TOOLSIZE)*TOOLSIZE)+TOPBARHEIGHT;
-		if (mx>TOOLSIZE) {
+	if (global->curbuf != -1) {
+		buffer *buf = global->buffers->data[global->curbuf];
+		if (1&buf->tool) {
 			selToolRect.x=TOOLSIZE;
+		} else {
+			selToolRect.x=0;
 		}
-		GREYCOL;
+		selToolRect.y = ((buf->tool/2)*TOOLSIZE)+TOPBARHEIGHT;
 		SDL_RenderDrawRect(rend, &selToolRect);
-		FGCOL;
+		if (mx<LEFTBARWIDTH && TOPBARHEIGHT<my && my<TOPBARHEIGHT+(5*TOOLSIZE)) {
+			selToolRect.x=0;
+			selToolRect.y=(((my-TOPBARHEIGHT)/TOOLSIZE)*TOOLSIZE)+TOPBARHEIGHT;
+			if (mx>TOOLSIZE) {
+				selToolRect.x=TOOLSIZE;
+			}
+			GREYCOL;
+			SDL_RenderDrawRect(rend, &selToolRect);
+			FGCOL;
+	}
 	}
 }
 
