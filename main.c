@@ -176,7 +176,7 @@ void drawToolBar(SDL_Renderer *rend, SDL_Texture *font, SDL_Texture *tool, limon
 			GREYCOL;
 			SDL_RenderDrawRect(rend, &selToolRect);
 			FGCOL;
-	}
+		}
 	}
 }
 
