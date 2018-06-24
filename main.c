@@ -1,5 +1,11 @@
+#ifndef _MSC_VER
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#else
+#include <SDL.h>
+#include <SDL_image.h>
+#endif
+#include <stdio.h>
 #include <stdlib.h>
 #include "arg.h"
 #include "slice.h"

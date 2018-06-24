@@ -1,7 +1,11 @@
 /* Buffer for image data */
 #ifndef BUFFER_H
 #define BUFFER_H
+#ifndef _MSC_VER
 #include <SDL2/SDL.h>
+#else
+#include <SDL.h>
+#endif
 #include "slice.h"
 
 typedef struct {
