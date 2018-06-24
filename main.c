@@ -405,7 +405,7 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 				return SDL_TRUE;
 			}
 		}
-	} else if (global->curbuf!=1 && mx<LEFTBARWIDTH && TOPBARHEIGHT<my) {
+	} else if (global->curbuf!=-1 && mx<LEFTBARWIDTH && TOPBARHEIGHT<my) {
 		if (my<TOPBARHEIGHT+(5*TOOLSIZE)) {
 			// Clicked on the toolbar
 			int seltool = ((my-TOPBARHEIGHT)/TOOLSIZE)*2;
