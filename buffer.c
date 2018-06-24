@@ -20,6 +20,21 @@ char *basename(char *path) {
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+palette *defaultPalette() {
+	palette *ret = malloc(sizeof(palette));
+	ret->size = 10;
+	ret->len = 6;
+	ret->colors = malloc(sizeof(SDL_Color)*ret->size);
+	ret->scroll = 0;
+	ret->colors[0] = (SDL_Color){0,0,0,0xFF};
+	ret->colors[1] = (SDL_Color){0xFF,0xFF,0xFF,0xFF};
+	ret->colors[2] = (SDL_Color){0xFF,0,0,0xFF};
+	ret->colors[3] = (SDL_Color){0,0xFF,0,0xFF};
+	ret->colors[4] = (SDL_Color){0,0,0xFF,0xFF};
+	ret->colors[5] = (SDL_Color){0xFF,0xFF,0,0xFF};
+	return ret;
+}
+
 buffer *makeBuffer(char *name) {
 	buffer *ret = malloc(sizeof(buffer));
 	ret->name = MakeSlice(name);
@@ -33,6 +48,9 @@ buffer *makeBuffer(char *name) {
 	ret->data = NULL;
 	ret->changedp = 1; // Generate a new texture when ready
 	ret->tool = 0;
+	ret->pal = defaultPalette();
+	ret->primary = (SDL_Color){0,0,0,0xFF};
+	ret->secondary = (SDL_Color){0xFF,0xFF,0xFF,0xFF};
 	return ret;
 }
 
@@ -42,6 +60,8 @@ void killBuffer(buffer *buf) {
 		free(buf->filename);
 	}
 	stbi_image_free(buf->data);
+	free(buf->pal->colors);
+	free(buf->pal);
 	free(buf);
 }
 

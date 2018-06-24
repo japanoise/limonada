@@ -13,15 +13,22 @@
 #define GREY 0x88
 #define GREY_BG GREY, GREY, GREY, SDL_ALPHA_OPAQUE
 #define COL_FG 0, 0, 0, SDL_ALPHA_OPAQUE
+#define UNWRAP_COL(col) (col).r, (col).g, (col).b, (col).a
+#define COL_PRIM UNWRAP_COL(buf->primary)
+#define COL_SEC UNWRAP_COL(buf->secondary)
 #define LETHEIGHT 12
 #define LETWIDTH 6
 #define BGCOL SDL_SetRenderDrawColor(rend, COL_BG)
 #define FGCOL SDL_SetRenderDrawColor(rend, COL_FG)
 #define GREYCOL SDL_SetRenderDrawColor(rend, GREY_BG)
+#define SCROLLBARWIDTH LETWIDTH+2
+
+#define GETCURBUF buffer *buf = global->buffers->data[global->curbuf];
 
 #define TOOLSIZE 16
+#define COLORSIZE 16
 #define LEFTBARWIDTH ((TOOLSIZE*2)+1)
-#define RIGHTBARWIDTH 0
+#define RIGHTBARWIDTH (COLORSIZE+SCROLLBARWIDTH)
 #define TOPBARHEIGHT ((2*LETHEIGHT)+5)
 #define BOTBARHEIGHT (LETHEIGHT+1)
 #define DRAWAREAHEIGHT (WINHEIGHT-TOPBARHEIGHT-BOTBARHEIGHT)
@@ -154,9 +161,11 @@ void drawTabBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar
 
 SDL_Rect toolsRect = {0, TOPBARHEIGHT, 2*TOOLSIZE, 5*TOOLSIZE};
 SDL_Rect selToolRect = {0, TOPBARHEIGHT, TOOLSIZE, TOOLSIZE};
+SDL_Rect primaryRect = {0, TOPBARHEIGHT+(5*TOOLSIZE)+LETHEIGHT, LEFTBARWIDTH-1, COLORSIZE};
+SDL_Rect secondaryRect = {0, TOPBARHEIGHT+(5*TOOLSIZE)+(LETHEIGHT*2)+COLORSIZE, LEFTBARWIDTH-1, COLORSIZE};
 
 void drawToolBar(SDL_Renderer *rend, SDL_Texture *font, SDL_Texture *tool, limonada *global, int mx, int my) {
-	SDL_RenderDrawLine(rend, LEFTBARWIDTH-1, TOPBARHEIGHT, LEFTBARWIDTH-1, WINWIDTH-BOTBARHEIGHT);
+	SDL_RenderDrawLine(rend, LEFTBARWIDTH-1, TOPBARHEIGHT, LEFTBARWIDTH-1, WINHEIGHT-BOTBARHEIGHT);
 	SDL_RenderCopy(rend, tool, NULL, &toolsRect);
 	if (global->curbuf != -1) {
 		buffer *buf = global->buffers->data[global->curbuf];
@@ -167,6 +176,16 @@ void drawToolBar(SDL_Renderer *rend, SDL_Texture *font, SDL_Texture *tool, limon
 		}
 		selToolRect.y = ((buf->tool/2)*TOOLSIZE)+TOPBARHEIGHT;
 		SDL_RenderDrawRect(rend, &selToolRect);
+		drawText(rend, "1:", font, 0, TOPBARHEIGHT+(5*TOOLSIZE));
+		SDL_SetRenderDrawColor(rend, COL_PRIM);
+		SDL_RenderFillRect(rend, &primaryRect);
+		FGCOL;
+		SDL_RenderDrawRect(rend, &primaryRect);
+		drawText(rend, "2:", font, 0, TOPBARHEIGHT+(5*TOOLSIZE)+LETHEIGHT+COLORSIZE);
+		SDL_SetRenderDrawColor(rend, COL_SEC);
+		SDL_RenderFillRect(rend, &secondaryRect);
+		FGCOL;
+		SDL_RenderDrawRect(rend, &secondaryRect);
 		if (mx<LEFTBARWIDTH && TOPBARHEIGHT<my && my<TOPBARHEIGHT+(5*TOOLSIZE)) {
 			selToolRect.x=0;
 			selToolRect.y=(((my-TOPBARHEIGHT)/TOOLSIZE)*TOOLSIZE)+TOPBARHEIGHT;
@@ -177,6 +196,56 @@ void drawToolBar(SDL_Renderer *rend, SDL_Texture *font, SDL_Texture *tool, limon
 			SDL_RenderDrawRect(rend, &selToolRect);
 			FGCOL;
 		}
+	}
+}
+
+SDL_Rect scrollRect = {0, 0, SCROLLBARWIDTH, 0};
+
+void drawScrollBar(SDL_Renderer *rend, SDL_Texture *font, int x, int y, int numitems, int scr, int containerheight, int contentItemHeight) {
+	if (scr>0)
+		drawText(rend, "\x1e", font, x+1, y);// up arrow
+
+	if ((scr*contentItemHeight)+containerheight<(numitems)*contentItemHeight)
+		drawText(rend, "\x1f", font, x+1, (y+containerheight)-LETHEIGHT);// down arrow
+
+	/*this commented out block is a partial implementation of a classic scroll bar
+	  however, I can't figure out how to calculate the thumbscrew size and position :c
+	drawText(rend, "\x1e", font, x+1, y);// up arrow
+	drawText(rend, "\x1f", font, x+1, (y+containerheight)-LETHEIGHT);// down arrow
+	int lx = x+(LETWIDTH/2);
+	SDL_RenderDrawLine(rend, lx, y+LETHEIGHT, lx, (y+containerheight)-(LETHEIGHT+1));
+	int scrh = containerheight-(2*LETHEIGHT);
+	scrollRect.h = scrh;
+	scrollRect.x = x;
+	scrollRect.y = y+LETHEIGHT;
+	SDL_RenderDrawRect(rend, &scrollRect);*/
+}
+
+SDL_Rect colorRect = {0, TOPBARHEIGHT, COLORSIZE, COLORSIZE};
+
+void drawPallete(SDL_Renderer *rend, SDL_Texture *font, limonada *global, int mx, int my) {
+	int anchor = WINWIDTH-RIGHTBARWIDTH;
+	SDL_RenderDrawLine(rend, anchor, TOPBARHEIGHT, anchor, WINHEIGHT-BOTBARHEIGHT);
+	if (global->curbuf != -1) {
+		GETCURBUF;
+		colorRect.x = anchor+1;
+		colorRect.y = TOPBARHEIGHT;
+		for(int i = buf->pal->scroll; i<buf->pal->len; i++) {
+			SDL_SetRenderDrawColor(rend, UNWRAP_COL(buf->pal->colors[i]));
+			SDL_RenderFillRect(rend, &colorRect);
+			FGCOL;
+			SDL_RenderDrawRect(rend, &colorRect);
+			colorRect.y+=COLORSIZE;
+		}
+		if (anchor<mx && mx<WINWIDTH-SCROLLBARWIDTH &&
+		    TOPBARHEIGHT<my && my<TOPBARHEIGHT+(COLORSIZE*(buf->pal->len-buf->pal->scroll))) {
+			GREYCOL;
+			int selcol = ((my-TOPBARHEIGHT)/COLORSIZE);
+			colorRect.y = TOPBARHEIGHT+(selcol*COLORSIZE);
+			SDL_RenderDrawRect(rend, &colorRect);
+			FGCOL;
+		}
+		drawScrollBar(rend, font, anchor+COLORSIZE+1, TOPBARHEIGHT, buf->pal->len, buf->pal->scroll, DRAWAREAHEIGHT, COLORSIZE);
 	}
 }
 
@@ -330,13 +399,35 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 				return SDL_TRUE;
 			}
 		}
-	} else if (global->curbuf!=1 && mx<LEFTBARWIDTH && TOPBARHEIGHT<my && my<TOPBARHEIGHT+(5*TOOLSIZE)) {
-		// Clicked on the toolbar
-		int seltool = ((my-TOPBARHEIGHT)/TOOLSIZE)*2;
-		if (mx>TOOLSIZE) {
-			seltool |= 1;
+	} else if (global->curbuf!=1 && mx<LEFTBARWIDTH && TOPBARHEIGHT<my) {
+		if (my<TOPBARHEIGHT+(5*TOOLSIZE)) {
+			// Clicked on the toolbar
+			int seltool = ((my-TOPBARHEIGHT)/TOOLSIZE)*2;
+			if (mx>TOOLSIZE) {
+				seltool |= 1;
+			}
+			global->buffers->data[global->curbuf]->tool = seltool;
+		} else if (my < secondaryRect.y+secondaryRect.h && global->curbuf != -1) {
+			// Clicked on the 1ary and 2ary colors
+			GETCURBUF;
+			SDL_Color temp = buf->primary;
+			buf->primary = buf->secondary;
+			buf->secondary = temp;
 		}
-		global->buffers->data[global->curbuf]->tool = seltool;
+	} else if (WINWIDTH-RIGHTBARWIDTH<mx && mx<WINWIDTH-SCROLLBARWIDTH &&
+		   TOPBARHEIGHT<my) {
+		// clicked on the palette
+		if (global->curbuf != -1) {
+			GETCURBUF;
+			if (my<TOPBARHEIGHT+(COLORSIZE*(buf->pal->len-buf->pal->scroll))) {
+				int selcol = buf->pal->scroll+((my-TOPBARHEIGHT)/COLORSIZE);
+				if (button == SDL_BUTTON_LEFT) {
+					buf->primary = buf->pal->colors[selcol];
+				} else if (button == SDL_BUTTON_RIGHT) {
+					buf->secondary = buf->pal->colors[selcol];
+				}
+			}
+		}
 	}
 	m->vis=-1;
 	return SDL_TRUE;
@@ -347,6 +438,12 @@ char mods = 0;
 void scroll(buffer *buf, SDL_Event event, int mx, int my) {
 	if (event.wheel.y > 0) {
 		// scroll up
+		if (mx>(WINWIDTH-RIGHTBARWIDTH)) {
+			if (buf->pal->scroll>0)
+				buf->pal->scroll--;
+			UPDATEPXPY;
+			return;
+		}
 		if (mods&MODCTRL) {
 			buf->zoom*=2;
 		} else if (mods&MODSHIFT) {
@@ -362,6 +459,12 @@ void scroll(buffer *buf, SDL_Event event, int mx, int my) {
 		}
 	} else if (event.wheel.y < 0) {
 		// scroll down
+		if (mx>(WINWIDTH-RIGHTBARWIDTH)) {
+			if (buf->pal->scroll < buf->pal->len-2)
+				buf->pal->scroll++;
+			UPDATEPXPY;
+			return;
+		}
 		if (mods&MODCTRL) {
 			buf->zoom/=2;
 			if (buf->zoom <= 0) {
@@ -455,6 +558,7 @@ int main(int argc, char *argv[]) {
 			drawBuffer(rend, global);
 		}
 		drawToolBar(rend, font, tool, global, mx, my);
+		drawPallete(rend, font, global, mx, my);
 		drawStatBar(rend, font, global);
 		drawTabBar(rend, font, global, m, mx, my);
 		drawMenuBar(m, rend, font, mx, my);
@@ -518,7 +622,7 @@ int main(int argc, char *argv[]) {
 				mx = event.motion.x;
 				my = event.motion.y;
 				if (global->curbuf != -1) {
-					buffer *buf = global->buffers->data[global->curbuf];
+					GETCURBUF;
 					if (event.motion.state&SDL_BUTTON_MMASK) {
 						// If middle button, pan the image
 						buf->panx -= event.motion.xrel;
