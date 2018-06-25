@@ -44,6 +44,17 @@
 #define MODSHIFT 2
 #define MODALT 4
 
+#define TOOL_PENCIL 0
+#define TOOL_PICKER 1
+#define TOOL_FILL 2
+#define TOOL_DITHER 3
+#define TOOL_PAINT 4
+#define TOOL_ERASE 5
+#define TOOL_SELECT 6
+#define TOOL_LINE 7
+#define TOOL_RECT 8
+#define TOOL_COLORTOCOLOR 9
+
 int WINWIDTH  = 800;
 int WINHEIGHT = 600;
 
@@ -470,8 +481,19 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 			} else {
 				color = buf->secondary;
 			}
-			bufferStartUndo(buf);
-			bufferSetPixel(buf, px, py, color);
+			switch(buf->tool) {
+			case TOOL_PENCIL:
+				bufferStartUndo(buf);
+				bufferSetPixel(buf, px, py, color);
+				break;
+			case TOOL_PICKER:
+				if (button == SDL_BUTTON_LEFT) {
+					buf->primary = bufferGetColorAt(buf, px, py);
+				} else {
+					buf->secondary = bufferGetColorAt(buf, px, py);
+				}
+				break;
+			}
 		}
 	}
 	m->vis=-1;
@@ -707,8 +729,12 @@ int main(int argc, char *argv[]) {
 					}
 				} else if (global->curbuf != -1) {
 					GETCURBUF;
-					if (buf->undoList != NULL && buf->undoList->type!=EndUndo) {
-						bufferEndUndo(buf);
+					switch(buf->tool) {
+					case TOOL_PENCIL:
+						if (buf->undoList != NULL && buf->undoList->type!=EndUndo) {
+							bufferEndUndo(buf);
+						}
+						break;
 					}
 				}
 				break;
@@ -744,7 +770,11 @@ int main(int argc, char *argv[]) {
 						} else {
 							color = buf->secondary;
 						}
-						bufferSetPixel(buf, px, py, color);
+						switch(buf->tool) {
+						case TOOL_PENCIL:
+							bufferSetPixel(buf, px, py, color);
+							break;
+						}
 					}
 				}
 				break;

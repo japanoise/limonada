@@ -24,6 +24,8 @@ char *basename(char *path) {
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#define GETINDEX(px, py) (buf->sizex*(py)*buf->datachannels)+(buf->datachannels*(px))
+
 palette *defaultPalette() {
 	palette *ret = malloc(sizeof(palette));
 	ret->size = 10;
@@ -186,7 +188,7 @@ undo *internal_appendUndo(buffer *buf) {
 }
 
 void bufferSetPixel(buffer *buf, int px, int py, SDL_Color color) {
-	int index = (buf->sizex*py*buf->datachannels)+(buf->datachannels*px);
+	int index = GETINDEX(px, py);
 	undo *u = internal_appendUndo(buf);
 	buf->undoList=u;
 	u->type=PixelUndo;
@@ -238,4 +240,15 @@ void bufferDoRedo(buffer *buf) {
 		}
 		buf->undoList = buf->undoList->next;
 	} while (buf->undoList->type != EndUndo);
+}
+
+SDL_Color bufferGetColorAt(buffer *buf, int x, int y) {
+	int index = GETINDEX(x, y);
+	SDL_Color ret;
+	ret.r = buf->data[index];
+	ret.g = buf->data[index+1];
+	ret.b = buf->data[index+2];
+	if (buf->datachannels == STBI_rgb_alpha)
+		ret.a = buf->data[index+3];
+	return ret;
 }

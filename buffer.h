@@ -83,4 +83,6 @@ void bufferEndUndo(buffer *buf);
 void bufferDoUndo(buffer *buf);
 
 void bufferDoRedo(buffer *buf);
+
+SDL_Color bufferGetColorAt(buffer *buf, int x, int y);
 #endif
