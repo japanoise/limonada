@@ -58,6 +58,22 @@ buffer *makeBuffer(char *name) {
 	return ret;
 }
 
+void internal_deleteRedoBranch(undo *branch) {
+	while (branch != NULL) {
+		undo *obranch = branch;
+		branch = branch->next;
+		free(obranch);
+	}
+}
+
+void internal_deleteUndoBranch(undo *branch) {
+	while (branch != NULL) {
+		undo *obranch = branch;
+		branch = branch->prev;
+		free(obranch);
+	}
+}
+
 void killBuffer(buffer *buf) {
 	DestroySlice(buf->name);
 	if (buf->filename != NULL) {
@@ -66,6 +82,10 @@ void killBuffer(buffer *buf) {
 	stbi_image_free(buf->data);
 	free(buf->pal->colors);
 	free(buf->pal);
+	if (buf->undoList != NULL){
+		internal_deleteRedoBranch(undoList->next);
+		internal_deleteUndoBranch(undoList);
+	}
 	free(buf);
 }
 
@@ -163,14 +183,6 @@ undo *internal_appendUndo(buffer *buf) {
 	buf->undoList->next->prev = buf->undoList;
 	buf->undoList->next->next = NULL;
 	return buf->undoList->next;
-}
-
-void internal_deleteRedoBranch(undo *branch) {
-	while (branch != NULL) {
-		undo *obranch = branch;
-		branch = branch->next;
-		free(obranch);
-	}
 }
 
 void bufferSetPixel(buffer *buf, int px, int py, SDL_Color color) {
