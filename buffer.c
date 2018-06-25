@@ -41,6 +41,15 @@ palette *defaultPalette() {
 	return ret;
 }
 
+void addColorToPalette(palette *pal, SDL_Color color) {
+	pal->colors[pal->len] = color;
+	pal->len++;
+	if (pal->len > pal->size-2) {
+		pal->size *= 2;
+		pal->colors = realloc(pal->colors, sizeof(SDL_Color)*pal->size);
+	}
+}
+
 buffer *makeBuffer(char *name) {
 	buffer *ret = malloc(sizeof(buffer));
 	ret->name = MakeSlice(name);

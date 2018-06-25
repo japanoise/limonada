@@ -480,7 +480,7 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 				}
 			}
 		}
-	} else if (global->curbuf != -1 && (button==SDL_BUTTON_LEFT||button==SDL_BUTTON_RIGHT)) {
+	} else if (global->curbuf != -1) {
 		// clicked on the paint area
 		GETCURBUF;
 		UPDATEPXPY;
@@ -493,14 +493,18 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 			}
 			switch(buf->tool) {
 			case TOOL_PENCIL:
-				bufferStartUndo(buf);
-				bufferSetPixel(buf, px, py, color);
+				if (button==SDL_BUTTON_LEFT||button==SDL_BUTTON_RIGHT) {
+					bufferStartUndo(buf);
+					bufferSetPixel(buf, px, py, color);
+				}
 				break;
 			case TOOL_PICKER:
 				if (button == SDL_BUTTON_LEFT) {
 					buf->primary = bufferGetColorAt(buf, px, py);
-				} else {
+				} else if (button == SDL_BUTTON_RIGHT) {
 					buf->secondary = bufferGetColorAt(buf, px, py);
+				} else {
+					addColorToPalette(buf->pal, bufferGetColorAt(buf, px, py));
 				}
 				break;
 			}

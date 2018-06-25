@@ -62,6 +62,8 @@ typedef struct {
 
 palette *defaultPalette();
 
+void addColorToPalette(palette *pal, SDL_Color color);
+
 buffer *makeBuffer(char *name);
 
 buffer *makeBufferFromFile(char *filename);
