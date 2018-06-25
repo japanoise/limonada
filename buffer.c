@@ -127,12 +127,103 @@ SDL_Texture *textureFromBuffer(buffer* buf, SDL_Renderer *rend) {
 	return ret;
 }
 
-void bufferSetPixel(buffer *buf, int px, int py, SDL_Color color) {
-	int index = (buf->sizex*py*buf->datachannels)+(buf->datachannels*px);
+void internal_bufferSetPixel (buffer *buf, int index, SDL_Color color) {
 	buf->data[index] = color.r;
 	buf->data[index+1] = color.g;
 	buf->data[index+2] = color.b;
 	if (buf->datachannels == STBI_rgb_alpha)
 		buf->data[index+3] = color.a;
 	buf->changedp = 1;
+}
+
+Uint32 internal_packSDLColor(SDL_Color color) {
+	return (color.r<<24)|(color.g<<16)|(color.b<<8)|(color.a);
+}
+
+Uint32 internal_packDataColor(buffer *buf, int index) {
+	Uint32 ret = buf->data[index];
+	for (int i = 1; i<4; i++) {
+		ret = ret<<8;
+		ret |= buf->data[index+i];
+	}
+	return ret;
+}
+
+SDL_Color internal_unpackColor(Uint32 color) {
+	SDL_Color ret;
+	ret.r=((color&0xFF000000)>>24);
+	ret.g=((color&0xFF0000)>>16);
+	ret.b=((color&0xFF00)>>8);
+	ret.a=color&0xFF;
+	return ret;
+}
+
+undo *internal_appendUndo(buffer *buf) {
+	buf->undoList->next = malloc(sizeof(undo));
+	buf->undoList->next->prev = buf->undoList;
+	buf->undoList->next->next = NULL;
+	return buf->undoList->next;
+}
+
+void internal_deleteRedoBranch(undo *branch) {
+	while (branch != NULL) {
+		undo *obranch = branch;
+		branch = branch->next;
+		free(obranch);
+	}
+}
+
+void bufferSetPixel(buffer *buf, int px, int py, SDL_Color color) {
+	int index = (buf->sizex*py*buf->datachannels)+(buf->datachannels*px);
+	undo *u = internal_appendUndo(buf);
+	buf->undoList=u;
+	u->type=PixelUndo;
+	u->data.pixUndoData = (pixDiff){index, internal_packDataColor(buf, index), internal_packSDLColor(color)};
+	internal_bufferSetPixel(buf, index, color);
+}
+
+int bufferIsDirty(buffer *buf) {
+	return buf->undoList == buf->saveUndo;
+}
+
+void bufferStartUndo(buffer *buf) {
+	if (buf->undoList == NULL) {
+		buf->undoList = malloc(sizeof(undo));
+		buf->undoList->next = NULL;
+		buf->undoList->prev = NULL;
+		buf->undoList->type = StartUndo;
+	} else {
+		internal_deleteRedoBranch(buf->undoList->next);
+		if (buf->undoList->type != StartUndo) {
+			buf->undoList = internal_appendUndo(buf);
+			buf->undoList->type = StartUndo;
+		}
+	}
+}
+
+void bufferEndUndo(buffer *buf) {
+	buf->undoList = internal_appendUndo(buf);
+	buf->undoList->type = EndUndo;
+}
+
+void bufferDoUndo(buffer *buf) {
+	if (buf->undoList==NULL||buf->undoList->prev==NULL) return;
+	do {
+		if (buf->undoList->type == PixelUndo) {
+			internal_bufferSetPixel(buf, buf->undoList->data.pixUndoData.index,
+						internal_unpackColor(buf->undoList->data.pixUndoData.oldColor));
+		}
+		buf->undoList = buf->undoList->prev;
+	} while (buf->undoList->type != StartUndo);
+}
+
+void bufferDoRedo(buffer *buf) {
+	if (buf->undoList==NULL||buf->undoList->next==NULL) return;
+	do {
+		if (buf->undoList->type == PixelUndo) {
+			internal_bufferSetPixel(buf, buf->undoList->data.pixUndoData.index,
+						internal_unpackColor(buf->undoList->data.pixUndoData.newColor));
+		}
+		buf->undoList = buf->undoList->next;
+	} while (buf->undoList->type != EndUndo);
 }

@@ -65,6 +65,22 @@ SDL_bool actionQuit(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 	return SDL_FALSE;
 }
 
+SDL_bool actionUndo(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
+	if (global->curbuf != -1) {
+		GETCURBUF;
+		bufferDoUndo(buf);
+	}
+	return SDL_TRUE;
+}
+
+SDL_bool actionRedo(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
+	if (global->curbuf != -1) {
+		GETCURBUF;
+		bufferDoRedo(buf);
+	}
+	return SDL_TRUE;
+}
+
 typedef struct {
 	StrSlice **entries;
 	menuItemCallback *callbacks;
@@ -383,13 +399,8 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 			for(int j=0; j<m->submenus[m->vis]->nentries; j++) {
 				oy = iy;
 				iy += LETHEIGHT;
-				if (oy <= my && my <= iy) {
-					if (m->submenus[m->vis]->callbacks[j]!=NULL) {
-						int sel = m->vis;
-						m->vis=-1;
-						return (*m->submenus[sel]->callbacks[j])(rend, font, global);
-					}
-					m->vis=-1;
+				if (oy <= my && my <= iy){
+					// Calling will be done in release mouse
 					return SDL_TRUE;
 				}
 			}
@@ -459,6 +470,7 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 			} else {
 				color = buf->secondary;
 			}
+			bufferStartUndo(buf);
 			bufferSetPixel(buf, px, py, color);
 		}
 	}
@@ -572,8 +584,10 @@ int main(int argc, char *argv[]) {
 	char *fileentries[] = {"Open", "Import", "Save", "Export", "Quit"};
 	m->submenus[0] = makeSubmenu(fileentries, 5);
 	m->submenus[0]->callbacks[4] = *actionQuit;
-	char *editentries[] = {"Copy", "Paste"};
-	m->submenus[1] = makeSubmenu(editentries, 2);
+	char *editentries[] = {"Undo", "Redo", "Copy", "Paste"};
+	m->submenus[1] = makeSubmenu(editentries, 4);
+	m->submenus[1]->callbacks[0] = *actionUndo;
+	m->submenus[1]->callbacks[1] = *actionRedo;
 	char *helpentries[] = {"On-Line Help", "About..."};
 	m->submenus[2] = makeSubmenu(helpentries, 2);
 	SDL_Rect paintArea = {LEFTBARWIDTH, TOPBARHEIGHT, DRAWAREAWIDTH, DRAWAREAHEIGHT};
@@ -619,6 +633,18 @@ int main(int argc, char *argv[]) {
 				case SDLK_RALT:
 					mods|=MODALT;
 					break;
+				case SDLK_z:
+					if (mods&=MODCTRL&&global->curbuf!=-1) {
+						GETCURBUF;
+						bufferDoUndo(buf);
+					}
+					break;
+				case SDLK_y:
+					if (mods&=MODCTRL&&global->curbuf!=-1) {
+						GETCURBUF;
+						bufferDoRedo(buf);
+					}
+					break;
 				}
 				break;
 
@@ -637,6 +663,7 @@ int main(int argc, char *argv[]) {
 					mods^=MODALT;
 					break;
 				}
+				break;
 
 			case SDL_MOUSEWHEEL:
 				if (global->curbuf != -1) {
@@ -649,6 +676,41 @@ int main(int argc, char *argv[]) {
 				mx = event.button.x;
 				my = event.button.y;
 				running = click(rend, font, global, m, mx, my, event.button.button);
+				break;
+
+			case SDL_MOUSEBUTTONUP:
+				mx = event.button.x;
+				my = event.button.y;
+				if (m->vis != -1) {
+					// A submenu is visible
+					int smw = (m->submenus[m->vis]->width*LETWIDTH)+4;
+					int ox = 0;
+					for (int i = 0; i<m->vis; i++) ox+=(m->titles[i]->len+1)*LETWIDTH;
+
+					if (ox <= mx && mx <= ox+smw) {
+						int iy = LETHEIGHT+3;
+						int oy = 0;
+						for(int j=0; j<m->submenus[m->vis]->nentries; j++) {
+							oy = iy;
+							iy += LETHEIGHT;
+							if (oy <= my && my <= iy) {
+								if (m->submenus[m->vis]->callbacks[j]!=NULL) {
+									int sel = m->vis;
+									m->vis=-1;
+									running = (*m->submenus[sel]->callbacks[j])(rend, font, global);
+									break;
+								}
+								m->vis=-1;
+								break;
+							}
+						}
+					}
+				} else if (global->curbuf != -1) {
+					GETCURBUF;
+					if (buf->undoList != NULL && buf->undoList->type!=EndUndo) {
+						bufferEndUndo(buf);
+					}
+				}
 				break;
 
 			case SDL_MOUSEMOTION:

@@ -15,6 +15,32 @@ typedef struct {
 	int scroll;
 } palette;
 
+enum undoType {
+	StartUndo,
+	EndUndo,
+	PixelUndo,
+};
+
+typedef enum undoType undoType;
+
+typedef struct {
+	int index;
+	Uint32 oldColor;
+	Uint32 newColor;
+} pixDiff;
+
+struct undo {
+	struct undo *prev;
+	struct undo *next;
+	undoType type;
+	union {
+		char batchUndoData;
+		pixDiff pixUndoData;
+	} data;
+};
+
+typedef struct undo undo;
+
 typedef struct {
 	StrSlice *name;
 	char *filename;
@@ -30,6 +56,8 @@ typedef struct {
 	SDL_Color primary;
 	SDL_Color secondary;
 	palette *pal;
+	undo *undoList;
+	undo *saveUndo;
 } buffer;
 
 palette *defaultPalette();
@@ -45,4 +73,14 @@ void killBuffer(buffer *buf);
 SDL_Texture *textureFromBuffer(buffer* buf, SDL_Renderer *rend);
 
 void bufferSetPixel(buffer *buf, int px, int py, SDL_Color color);
+
+int bufferIsDirty(buffer *buf);
+
+void bufferStartUndo(buffer *buf);
+
+void bufferEndUndo(buffer *buf);
+
+void bufferDoUndo(buffer *buf);
+
+void bufferDoRedo(buffer *buf);
 #endif
