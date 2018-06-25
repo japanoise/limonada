@@ -7,7 +7,7 @@ all: $(PROGNAME)
 debug: CFLAGS+=-g -O0 -v -Q
 debug: $(PROGNAME)
 
-$(PROGNAME): slice.o main.o state.o buffer.o
+$(PROGNAME): slice.o main.o state.o buffer.o gui.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 cp437.xpm: cp437.png

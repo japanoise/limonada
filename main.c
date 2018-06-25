@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "arg.h"
+#include "gui.h"
 #include "slice.h"
 #include "state.h"
 #include "cp437.xpm"
@@ -22,8 +23,6 @@
 #define UNWRAP_COL(col) (col).r, (col).g, (col).b, (col).a
 #define COL_PRIM UNWRAP_COL(buf->primary)
 #define COL_SEC UNWRAP_COL(buf->secondary)
-#define LETHEIGHT 12
-#define LETWIDTH 6
 #define BGCOL SDL_SetRenderDrawColor(rend, COL_BG)
 #define FGCOL SDL_SetRenderDrawColor(rend, COL_FG)
 #define GREYCOL SDL_SetRenderDrawColor(rend, GREY_BG)
@@ -57,18 +56,6 @@
 
 int WINWIDTH  = 800;
 int WINHEIGHT = 600;
-
-void drawText(SDL_Renderer *rend, char *text, SDL_Texture *font, int x, int y) {
-	SDL_Rect srcrect = {0,0,LETWIDTH,LETHEIGHT};
-	SDL_Rect destrect = {x,y,LETWIDTH,LETHEIGHT};
-	for (;*text!='\0';text++) {
-		char c = *text;
-		srcrect.x=(c&0x0F)*LETWIDTH;
-		srcrect.y=(c>>4)*LETHEIGHT;
-		SDL_RenderCopy(rend, font, &srcrect, &destrect);
-		destrect.x+=LETWIDTH;
-	}
-}
 
 typedef SDL_bool (*menuItemCallback)(SDL_Renderer *rend, SDL_Texture *font, limonada *global);
 
