@@ -526,7 +526,8 @@ void scroll(buffer *buf, SDL_Event event, int mx, int my) {
 			return;
 		}
 		if (mods&MODCTRL) {
-			buf->zoom*=2;
+			if (buf->zoom < 512)
+				buf->zoom*=2;
 		} else if (mods&MODSHIFT) {
 			buf->panx--;
 			if (buf->panx<0) {
