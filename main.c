@@ -659,7 +659,8 @@ int main(int argc, char *argv[]) {
 					}
 					UPDATEPXPY;
 					if ((event.motion.state&SDL_BUTTON_RMASK||event.motion.state&SDL_BUTTON_LMASK) &&
-					    LEFTBARWIDTH<mx && mx < WINWIDTH-RIGHTBARWIDTH && TOPBARHEIGHT < my && my < WINHEIGHT-BOTBARHEIGHT) {
+					    LEFTBARWIDTH<mx && mx < WINWIDTH-RIGHTBARWIDTH && TOPBARHEIGHT < my && my < WINHEIGHT-BOTBARHEIGHT &&
+					    0<=px && px<buf->sizex && 0<=py && py<buf->sizey) {
 						// dragging for tools
 						SDL_Color color;
 						if (event.motion.state&SDL_BUTTON_LMASK) {
