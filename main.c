@@ -306,12 +306,15 @@ void drawBuffer(SDL_Renderer* rend, limonada *global) {
 	int sizey = (buf->sizey-buf->pany)*buf->zoom;
 	sprArea.x = buf->panx;
 	sprArea.y = buf->pany;
+	int boundaryX = 0;
+	int boundaryY = 0;
 	if (sizey == DRAWAREAHEIGHT) {
 		drawArea.h = DRAWAREAHEIGHT;
 		sprArea.h = sizey;
 	} else if (sizey<DRAWAREAHEIGHT) {
 		sprArea.h = sizey;
 		drawArea.h = sizey;
+		boundaryY = sizey;
 	} else if (sizey>DRAWAREAHEIGHT) {
 		drawArea.h = DRAWAREAHEIGHT;
 		sprArea.h = DRAWAREAHEIGHT/buf->zoom;
@@ -322,11 +325,22 @@ void drawBuffer(SDL_Renderer* rend, limonada *global) {
 	} else if (sizex<DRAWAREAWIDTH) {
 		sprArea.w = sizex;
 		drawArea.w = sizex;
+		boundaryX = sizex;
 	} else if (sizex>DRAWAREAWIDTH) {
 		drawArea.w = DRAWAREAWIDTH;
 		sprArea.w = DRAWAREAWIDTH/buf->zoom;
 	}
 	SDL_RenderCopy(rend, curtext, &sprArea, &drawArea);
+	if (boundaryY > 0) {
+		if (boundaryX > 0) {
+			SDL_RenderDrawLine(rend, drawArea.x, boundaryY+drawArea.y, boundaryX+drawArea.x, boundaryY+drawArea.y);
+			SDL_RenderDrawLine(rend, boundaryX+drawArea.x, drawArea.y, boundaryX+drawArea.x, boundaryY+drawArea.y);
+		} else {
+			SDL_RenderDrawLine(rend, drawArea.x, boundaryY+drawArea.y, WINWIDTH-RIGHTBARWIDTH, boundaryY+drawArea.y);
+		}
+	} else if (boundaryX > 0) {
+		SDL_RenderDrawLine(rend, boundaryX+drawArea.x, drawArea.y, boundaryX+drawArea.x, WINHEIGHT-BOTBARHEIGHT);
+	}
 }
 
 SDL_Texture* loadXpm(SDL_Renderer *rend, char **data) {
