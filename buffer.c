@@ -83,8 +83,8 @@ void killBuffer(buffer *buf) {
 	free(buf->pal->colors);
 	free(buf->pal);
 	if (buf->undoList != NULL){
-		internal_deleteRedoBranch(undoList->next);
-		internal_deleteUndoBranch(undoList);
+		internal_deleteRedoBranch(buf->undoList->next);
+		internal_deleteUndoBranch(buf->undoList);
 	}
 	free(buf);
 }
