@@ -197,6 +197,8 @@ SDL_Rect selToolRect = {0, TOPBARHEIGHT, TOOLSIZE, TOOLSIZE};
 SDL_Rect primaryRect = {0, TOPBARHEIGHT+(5*TOOLSIZE)+LETHEIGHT, LEFTBARWIDTH-1, COLORSIZE};
 SDL_Rect secondaryRect = {0, TOPBARHEIGHT+(5*TOOLSIZE)+(LETHEIGHT*2)+COLORSIZE, LEFTBARWIDTH-1, COLORSIZE};
 
+#define XRECT(rect) SDL_RenderDrawLine(rend, rect.x, rect.y, rect.x+rect.w, rect.y+rect.h); SDL_RenderDrawLine(rend, rect.x, rect.y+rect.h, rect.x+rect.w, rect.y)
+
 void drawToolBar(SDL_Renderer *rend, SDL_Texture *font, SDL_Texture *tool, limonada *global, int mx, int my) {
 	SDL_RenderDrawLine(rend, LEFTBARWIDTH-1, TOPBARHEIGHT, LEFTBARWIDTH-1, WINHEIGHT-BOTBARHEIGHT);
 	SDL_RenderCopy(rend, tool, NULL, &toolsRect);
@@ -209,16 +211,23 @@ void drawToolBar(SDL_Renderer *rend, SDL_Texture *font, SDL_Texture *tool, limon
 		}
 		selToolRect.y = ((buf->tool/2)*TOOLSIZE)+TOPBARHEIGHT;
 		SDL_RenderDrawRect(rend, &selToolRect);
+
+		// draw black Xs under the color area; shows transparency
+		XRECT(primaryRect);
+		XRECT(secondaryRect);
+
 		drawText(rend, "1:", font, 0, TOPBARHEIGHT+(5*TOOLSIZE));
 		SDL_SetRenderDrawColor(rend, COL_PRIM);
 		SDL_RenderFillRect(rend, &primaryRect);
 		FGCOL;
 		SDL_RenderDrawRect(rend, &primaryRect);
+
 		drawText(rend, "2:", font, 0, TOPBARHEIGHT+(5*TOOLSIZE)+LETHEIGHT+COLORSIZE);
 		SDL_SetRenderDrawColor(rend, COL_SEC);
 		SDL_RenderFillRect(rend, &secondaryRect);
 		FGCOL;
 		SDL_RenderDrawRect(rend, &secondaryRect);
+
 		if (mx<LEFTBARWIDTH && TOPBARHEIGHT<my && my<TOPBARHEIGHT+(5*TOOLSIZE)) {
 			selToolRect.x=0;
 			selToolRect.y=(((my-TOPBARHEIGHT)/TOOLSIZE)*TOOLSIZE)+TOPBARHEIGHT;
@@ -264,6 +273,7 @@ void drawPallete(SDL_Renderer *rend, SDL_Texture *font, limonada *global, int mx
 		colorRect.x = anchor+1;
 		colorRect.y = TOPBARHEIGHT;
 		for(int i = buf->pal->scroll; i<buf->pal->len; i++) {
+			XRECT(colorRect);
 			SDL_SetRenderDrawColor(rend, UNWRAP_COL(buf->pal->colors[i]));
 			SDL_RenderFillRect(rend, &colorRect);
 			FGCOL;
@@ -590,6 +600,7 @@ int main(int argc, char *argv[]) {
 
 	// get the renderer
 	SDL_Renderer *rend = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	SDL_SetRenderDrawBlendMode(rend, SDL_BLENDMODE_BLEND);
 
 	// load the font and icon
 	SDL_Texture *font = loadXpm(rend, cp437);
