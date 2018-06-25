@@ -43,4 +43,6 @@ void setBufferFileName(char *filename, buffer *buf);
 void killBuffer(buffer *buf);
 
 SDL_Texture *textureFromBuffer(buffer* buf, SDL_Renderer *rend);
+
+void bufferSetPixel(buffer *buf, int px, int py, SDL_Color color);
 #endif

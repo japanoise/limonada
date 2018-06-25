@@ -126,3 +126,13 @@ SDL_Texture *textureFromBuffer(buffer* buf, SDL_Renderer *rend) {
 	SDL_FreeSurface(surf);
 	return ret;
 }
+
+void bufferSetPixel(buffer *buf, int px, int py, SDL_Color color) {
+	int index = (buf->sizex*py*buf->datachannels)+(buf->datachannels*px);
+	buf->data[index] = color.r;
+	buf->data[index+1] = color.g;
+	buf->data[index+2] = color.b;
+	if (buf->datachannels == STBI_rgb_alpha)
+		buf->data[index+3] = color.a;
+	buf->changedp = 1;
+}

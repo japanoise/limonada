@@ -434,6 +434,19 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 				}
 			}
 		}
+	} else if (global->curbuf != -1 && (button==SDL_BUTTON_LEFT||button==SDL_BUTTON_RIGHT)) {
+		// clicked on the paint area
+		GETCURBUF;
+		UPDATEPXPY;
+		if (0<=px && px<buf->sizex && 0<=py && py<buf->sizey) {
+			SDL_Color color;
+			if (button == SDL_BUTTON_LEFT) {
+				color = buf->primary;
+			} else {
+				color = buf->secondary;
+			}
+			bufferSetPixel(buf, px, py, color);
+		}
 	}
 	m->vis=-1;
 	return SDL_TRUE;
@@ -645,6 +658,17 @@ int main(int argc, char *argv[]) {
 						}
 					}
 					UPDATEPXPY;
+					if ((event.motion.state&SDL_BUTTON_RMASK||event.motion.state&SDL_BUTTON_LMASK) &&
+					    LEFTBARWIDTH<mx && mx < WINWIDTH-RIGHTBARWIDTH && TOPBARHEIGHT < my && my < WINHEIGHT-BOTBARHEIGHT) {
+						// dragging for tools
+						SDL_Color color;
+						if (event.motion.state&SDL_BUTTON_LMASK) {
+							color = buf->primary;
+						} else {
+							color = buf->secondary;
+						}
+						bufferSetPixel(buf, px, py, color);
+					}
 				}
 				break;
 
