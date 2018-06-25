@@ -716,7 +716,7 @@ int main(int argc, char *argv[]) {
 			case SDL_MOUSEMOTION:
 				mx = event.motion.x;
 				my = event.motion.y;
-				if (global->curbuf != -1) {
+				if (m->vis == -1 && global->curbuf != -1) {
 					GETCURBUF;
 					if (event.motion.state&SDL_BUTTON_MMASK) {
 						// If middle button, pan the image
