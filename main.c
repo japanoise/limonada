@@ -16,17 +16,6 @@
 #include "tools.xpm"
 
 #define TITLE "Limonada"
-#define COL_BG 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE
-#define GREY 0x88
-#define GREY_BG GREY, GREY, GREY, SDL_ALPHA_OPAQUE
-#define COL_FG 0, 0, 0, SDL_ALPHA_OPAQUE
-#define UNWRAP_COL(col) (col).r, (col).g, (col).b, (col).a
-#define COL_PRIM UNWRAP_COL(buf->primary)
-#define COL_SEC UNWRAP_COL(buf->secondary)
-#define BGCOL SDL_SetRenderDrawColor(rend, COL_BG)
-#define FGCOL SDL_SetRenderDrawColor(rend, COL_FG)
-#define GREYCOL SDL_SetRenderDrawColor(rend, GREY_BG)
-#define SCROLLBARWIDTH LETWIDTH+2
 
 #define GETCURBUF buffer *buf = global->buffers->data[global->curbuf];
 
@@ -75,6 +64,16 @@ SDL_bool actionRedo(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 	if (global->curbuf != -1) {
 		GETCURBUF;
 		bufferDoRedo(buf);
+	}
+	return SDL_TRUE;
+}
+
+SDL_bool actionOpen(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
+	char *fn = fileBrowse(rend, font, getenv("HOME"));
+	if (fn != NULL){
+		buffer *buf = makeBufferFromFile(fn);
+		global->curbuf=appendBuffer(global->buffers, buf);
+		free(fn);
 	}
 	return SDL_TRUE;
 }
@@ -608,6 +607,7 @@ int main(int argc, char *argv[]) {
 	menubar *m = makeMenuBar(titles, 3);
 	char *fileentries[] = {"Open", "Import", "Save", "Export", "Quit"};
 	m->submenus[0] = makeSubmenu(fileentries, 5);
+	m->submenus[0]->callbacks[0] = *actionOpen;
 	m->submenus[0]->callbacks[4] = *actionQuit;
 	char *editentries[] = {"Undo", "Redo", "Copy", "Paste"};
 	m->submenus[1] = makeSubmenu(editentries, 4);

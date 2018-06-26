@@ -11,13 +11,14 @@ buflist *makeBuflist() {
 	return ret;
 }
 
-void appendBuffer(buflist *list, buffer *buf) {
+int appendBuffer(buflist *list, buffer *buf) {
 	list->data[list->len] = buf;
 	list->len++;
 	if (list->len >= list->size - 3) {
 		list->size *= 2;
 		list->data = realloc(list->data, list->size*sizeof(buffer*));
 	}
+	return list->len-1;
 }
 
 void killBufferInList(buflist *list, int which){

@@ -15,6 +15,7 @@ set(SOURCES
 arg.h
 buffer.c
 buffer.h
+dirent.h
 gui.c
 gui.h
 main.c

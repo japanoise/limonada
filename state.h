@@ -18,7 +18,7 @@ buflist *makeBuflist();
 
 buflist *makeBuflistFromArgs(int argc, char *argv[]);
 
-void appendBuffer(buflist *list, buffer *buf);
+int appendBuffer(buflist *list, buffer *buf);
 
 void killBufferInList(buflist *list, int which);
 
