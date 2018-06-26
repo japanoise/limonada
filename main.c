@@ -28,10 +28,6 @@
 #define DRAWAREAHEIGHT (WINHEIGHT-TOPBARHEIGHT-BOTBARHEIGHT)
 #define DRAWAREAWIDTH (WINWIDTH-LEFTBARWIDTH-RIGHTBARWIDTH)
 
-#define MODCTRL 1
-#define MODSHIFT 2
-#define MODALT 4
-
 #define TOOL_PENCIL 0
 #define TOOL_PICKER 1
 #define TOOL_FILL 2
@@ -45,6 +41,10 @@
 
 int WINWIDTH  = 800;
 int WINHEIGHT = 600;
+const Uint8* keyboardState;
+#define KEYDOWN(key) keyboardState[SDL_GetScancodeFromKey(key)]
+#define CTRL_DOWN (KEYDOWN(SDLK_LCTRL)||KEYDOWN(SDLK_RCTRL))
+#define SHIFT_DOWN (KEYDOWN(SDLK_LSHIFT)||KEYDOWN(SDLK_RSHIFT))
 
 typedef SDL_bool (*menuItemCallback)(SDL_Renderer *rend, SDL_Texture *font, limonada *global);
 
@@ -500,8 +500,6 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 	return SDL_TRUE;
 }
 
-char mods = 0;
-
 void scroll(buffer *buf, SDL_Event event, int mx, int my) {
 	if (event.wheel.y > 0) {
 		// scroll up
@@ -511,10 +509,10 @@ void scroll(buffer *buf, SDL_Event event, int mx, int my) {
 			UPDATEPXPY;
 			return;
 		}
-		if (mods&MODCTRL) {
+		if (CTRL_DOWN) {
 			if (buf->zoom < 512)
 				buf->zoom*=2;
-		} else if (mods&MODSHIFT) {
+		} else if (SHIFT_DOWN) {
 			buf->panx--;
 			if (buf->panx<0) {
 				buf->panx=0;
@@ -533,12 +531,12 @@ void scroll(buffer *buf, SDL_Event event, int mx, int my) {
 			UPDATEPXPY;
 			return;
 		}
-		if (mods&MODCTRL) {
+		if (CTRL_DOWN) {
 			buf->zoom/=2;
 			if (buf->zoom <= 0) {
 				buf->zoom = 1;
 			}
-		} else if (mods&MODSHIFT) {
+		} else if (SHIFT_DOWN) {
 			buf->panx++;
 			if (buf->panx > buf->sizex) {
 				buf->panx=buf->sizex;
@@ -616,10 +614,14 @@ int main(int argc, char *argv[]) {
 	char *helpentries[] = {"On-Line Help", "About..."};
 	m->submenus[2] = makeSubmenu(helpentries, 2);
 	SDL_Rect paintArea = {LEFTBARWIDTH, TOPBARHEIGHT, DRAWAREAWIDTH, DRAWAREAHEIGHT};
+	keyboardState = SDL_GetKeyboardState(NULL);
 
 	// main loop
 	SDL_bool running = SDL_TRUE;
 	while (running) {
+		// update variables
+		SDL_GetRendererOutputSize(rend, &WINWIDTH, &WINHEIGHT);
+		SDL_GetMouseState(&mx, &my);
 		// draw the window
 		BGCOL;
 		SDL_RenderClear(rend);
@@ -646,46 +648,17 @@ int main(int argc, char *argv[]) {
 
 			case SDL_KEYDOWN:
 				switch (event.key.keysym.sym) {
-				case SDLK_RCTRL:
-				case SDLK_LCTRL:
-					mods|=MODCTRL;
-					break;
-				case SDLK_RSHIFT:
-				case SDLK_LSHIFT:
-					mods|=MODSHIFT;
-					break;
-				case SDLK_LALT:
-				case SDLK_RALT:
-					mods|=MODALT;
-					break;
 				case SDLK_z:
-					if (mods&=MODCTRL&&global->curbuf!=-1) {
+					if (CTRL_DOWN&&global->curbuf!=-1) {
 						GETCURBUF;
 						bufferDoUndo(buf);
 					}
 					break;
 				case SDLK_y:
-					if (mods&=MODCTRL&&global->curbuf!=-1) {
+					if (CTRL_DOWN&&global->curbuf!=-1) {
 						GETCURBUF;
 						bufferDoRedo(buf);
 					}
-					break;
-				}
-				break;
-
-			case SDL_KEYUP:
-				switch (event.key.keysym.sym) {
-				case SDLK_RCTRL:
-				case SDLK_LCTRL:
-					mods^=MODCTRL;
-					break;
-				case SDLK_RSHIFT:
-				case SDLK_LSHIFT:
-					mods^=MODSHIFT;
-					break;
-				case SDLK_LALT:
-				case SDLK_RALT:
-					mods^=MODALT;
 					break;
 				}
 				break;
@@ -783,7 +756,6 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case SDL_WINDOWEVENT:
-				SDL_GetWindowSize(window, &WINWIDTH, &WINHEIGHT);
 				paintArea.w=DRAWAREAWIDTH;
 				paintArea.h=DRAWAREAHEIGHT;
 				break;
