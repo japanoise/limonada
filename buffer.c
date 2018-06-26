@@ -66,6 +66,8 @@ buffer *makeBuffer(char *name) {
 	ret->pal = defaultPalette();
 	ret->primary = (SDL_Color){0,0,0,0xFF};
 	ret->secondary = (SDL_Color){0xFF,0xFF,0xFF,0xFF};
+	ret->undoList = NULL;
+	ret->saveUndo = NULL;
 	return ret;
 }
 
