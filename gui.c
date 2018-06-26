@@ -28,6 +28,18 @@ void drawText(SDL_Renderer *rend, char *text, SDL_Texture *font, int x, int y) {
 	}
 }
 
+#define LEFT_FIRST -1
+#define EQUAL 0
+#define RIGHT_FIRST 1
+
+int compareDirent(const void* l, const void* r) {
+	struct dirent **left = (struct dirent**) l;
+	struct dirent **right = (struct dirent**) r;
+	if ((*left)->d_type==DT_DIR && (*right)->d_type!=DT_DIR) return LEFT_FIRST;
+	else if ((*left)->d_type!=DT_DIR && (*right)->d_type==DT_DIR) return RIGHT_FIRST;
+	else return strcmp((*left)->d_name, (*right)->d_name);
+}
+
 char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir) {
 	char* curDir = malloc(strlen(dir));
 	strcpy(curDir, dir);
@@ -55,6 +67,7 @@ char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir) {
 			files = realloc(files, sizeof(struct dirent)*bufsize);
 		}
 	}
+	qsort(files, nfiles, sizeof(struct dirent*), compareDirent);
 	while (!done) {
 		SDL_GetRendererOutputSize(rend, &wwidth, &wheight);
 		SDL_GetMouseState(&mousex, &mousey);
@@ -145,6 +158,7 @@ char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir) {
 									files = realloc(files, sizeof(struct dirent)*bufsize);
 								}
 							}
+							qsort(files, nfiles, sizeof(struct dirent*), compareDirent);
 						} else {
 							// return filename
 							ret = malloc(strlen(curDir)+strlen(files[sel]->d_name)+3);
