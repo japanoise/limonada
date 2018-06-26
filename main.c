@@ -69,10 +69,19 @@ SDL_bool actionRedo(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 }
 
 SDL_bool actionOpen(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
-	char *fn = fileBrowse(rend, font, getenv("HOME"));
+	char *fn = fileBrowse(rend, font, getenv("HOME"), 0);
 	if (fn != NULL){
 		buffer *buf = makeBufferFromFile(fn);
 		global->curbuf=appendBuffer(global->buffers, buf);
+		free(fn);
+	}
+	return SDL_TRUE;
+}
+
+SDL_bool actionSave(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
+	char *fn = fileBrowse(rend, font, getenv("HOME"), fileFlag_NewFiles);
+	if (fn != NULL){
+		printf("%s\n", fn);
 		free(fn);
 	}
 	return SDL_TRUE;
@@ -606,6 +615,7 @@ int main(int argc, char *argv[]) {
 	char *fileentries[] = {"Open", "Import", "Save", "Export", "Quit"};
 	m->submenus[0] = makeSubmenu(fileentries, 5);
 	m->submenus[0]->callbacks[0] = *actionOpen;
+	m->submenus[0]->callbacks[2] = *actionSave;
 	m->submenus[0]->callbacks[4] = *actionQuit;
 	char *editentries[] = {"Undo", "Redo", "Copy", "Paste"};
 	m->submenus[1] = makeSubmenu(editentries, 4);

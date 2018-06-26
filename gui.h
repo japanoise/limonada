@@ -20,5 +20,8 @@
 #define SCROLLBARWIDTH LETWIDTH+2
 
 void drawText(SDL_Renderer *rend, char *text, SDL_Texture *font, int x, int y);
-char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir);
+
+enum fileFlags {fileFlag_NewFiles = 1};
+
+char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlags flags);
 #endif
