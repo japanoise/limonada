@@ -19,6 +19,8 @@ dirent.h
 gui.c
 gui.h
 main.c
+platform.c
+platform.h
 slice.c
 slice.h
 state.c

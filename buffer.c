@@ -5,20 +5,7 @@
 #endif
 #include <stdlib.h>
 #include <string.h>
-#ifdef _WIN32
-// Untested
-char *basename(char *path) {
-	int l = strlen(path);
-	char *fn = malloc(l);
-	char *ext = malloc(l);
-	_splitpath(path, NULL, NULL, fn, ext);
-	strcat(fn, ext);
-	free(ext);
-	return fn;
-}
-#else
-#include <libgen.h>
-#endif
+#include "platform.h"
 #include "buffer.h"
 #define STBI_NO_JPEG // Jaypegs in a sprite editor? NOPE.
 #define STB_IMAGE_IMPLEMENTATION
