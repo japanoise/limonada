@@ -6,15 +6,14 @@
 
 #ifndef _WIN32
 #include <dirent.h>
-#define PATHSEP "/"
 #else
 #include "dirent.h"
-#define PATHSEP "\\"
 #endif
 
 #include <stdlib.h>
 #include <string.h>
 #include "gui.h"
+#include "platform.h"
 
 void drawText(SDL_Renderer *rend, char *text, SDL_Texture *font, int x, int y) {
 	SDL_Rect srcrect = {0,0,LETWIDTH,LETHEIGHT};
@@ -196,8 +195,12 @@ char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlag
 							strcat(curDir, files[sel]->d_name);
 							nfiles = 0;
 							scroll = 0;
+#ifndef _WIN32
 							char *tmp = malloc(strlen(curDir));
 							realpath(curDir, tmp);
+#else
+							char *tmp = _fullpath(NULL, curDir, strlen(curDir));
+#endif
 							strcpy(curDir, tmp);
 							free(tmp);
 							D = opendir(curDir);

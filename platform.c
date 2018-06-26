@@ -1,6 +1,7 @@
 #include "platform.h"
 #ifdef _WIN32
 #include <shlwapi.h>
+#include <stdio.h>
 
 char *basename(char *path) {
 	int l = strlen(path);
@@ -13,7 +14,13 @@ char *basename(char *path) {
 }
 
 int fexist(char *path) {
-	return PathFileExistsA(path);
+	FILE *f = fopen(path, "r");
+	if (f) {
+		fclose(f);
+		return 1;
+	} else {
+		return errno == ENOENT;
+	}
 }
 #else
 #include <libgen.h>
