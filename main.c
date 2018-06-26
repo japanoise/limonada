@@ -14,6 +14,7 @@
 #include "cp437.xpm"
 #include "icon.xpm"
 #include "tools.xpm"
+#include "platform.h"
 
 #define TITLE "Limonada"
 
@@ -79,9 +80,30 @@ SDL_bool actionOpen(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 }
 
 SDL_bool actionSave(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
+	if (global->curbuf == -1) return SDL_TRUE;
 	char *fn = fileBrowse(rend, font, getenv("HOME"), fileFlag_NewFiles);
 	if (fn != NULL){
-		printf("%s\n", fn);
+		if (fexist(fn)) {
+			const SDL_MessageBoxButtonData buttons[] = {
+				{SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "yes"},
+				{SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 1, "no"},
+			};
+			const SDL_MessageBoxData messageboxdata = {
+				SDL_MESSAGEBOX_WARNING,
+				NULL,
+				fn,
+				"File already exists, overwrite?",
+				SDL_arraysize(buttons),
+				buttons,
+				NULL
+			};
+			int buttonid = -1;
+			if (SDL_ShowMessageBox(&messageboxdata, &buttonid)<0 || buttonid != 0) {
+				free(fn);
+				return SDL_TRUE;
+			}
+		}
+		printf("PLACEHOLDER: saved %s\n", fn);
 		free(fn);
 	}
 	return SDL_TRUE;
