@@ -789,7 +789,6 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 		}
-		SDL_Delay(16);
 	}
 
 	// Cleanup and quit back to DOS ;)
