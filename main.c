@@ -74,7 +74,10 @@ SDL_bool actionOpen(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 	if (fn != NULL){
 		buffer *buf = makeBufferFromFile(fn);
 		global->curbuf=appendBuffer(global->buffers, buf);
+#ifndef _WIN32
+		// In win32 this is a global variable that isn't dynamically allocated
 		free(fn);
+#endif
 	}
 	return SDL_TRUE;
 }
@@ -83,6 +86,8 @@ SDL_bool actionSave(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 	if (global->curbuf == -1) return SDL_TRUE;
 	char *fn = fileBrowse(rend, font, getenv("HOME"), fileFlag_NewFiles);
 	if (fn != NULL){
+#ifndef _WIN32
+		// Overwrite confirmation done automagically on Windows
 		if (fexist(fn)) {
 			const SDL_MessageBoxButtonData buttons[] = {
 				{SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "yes"},
@@ -103,8 +108,12 @@ SDL_bool actionSave(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 				return SDL_TRUE;
 			}
 		}
-		printf("PLACEHOLDER: saved %s\n", fn);
+#endif
+		printf("PLACEHOLDER: saved %s\n", fn); // This doesn't print on windows, but not to worry, gdb says we have something in fn anyways.
+#ifndef _WIN32
+		// In win32 this is a global variable that isn't dynamically allocated
 		free(fn);
+#endif
 	}
 	return SDL_TRUE;
 }

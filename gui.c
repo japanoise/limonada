@@ -7,7 +7,8 @@
 #ifndef _WIN32
 #include <dirent.h>
 #else
-#include "dirent.h"
+// abandon hope all ye that enter here
+#include <windows.h>
 #endif
 
 #include <stdlib.h>
@@ -27,6 +28,7 @@ void drawText(SDL_Renderer *rend, char *text, SDL_Texture *font, int x, int y) {
 	}
 }
 
+#ifndef _WIN32
 #define LEFT_FIRST -1
 #define EQUAL 0
 #define RIGHT_FIRST 1
@@ -76,13 +78,15 @@ char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlag
 		newfilesel = 0;
 		SDL_StartTextInput();
 	}
-	while ((curent = readdir(D))!=NULL) {
+	curent = readdir(D);
+	while (curent!=NULL) {
 		files[nfiles] = curent;
 		nfiles++;
 		if (nfiles > bufsize-2) {
 			bufsize *= 2;
 			files = realloc(files, sizeof(struct dirent)*bufsize);
 		}
+		curent = readdir(D);
 	}
 	qsort(files, nfiles, sizeof(struct dirent*), compareDirent);
 	while (!done) {
@@ -195,12 +199,9 @@ char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlag
 							strcat(curDir, files[sel]->d_name);
 							nfiles = 0;
 							scroll = 0;
-#ifndef _WIN32
 							char *tmp = malloc(strlen(curDir));
 							realpath(curDir, tmp);
-#else
 							char *tmp = _fullpath(NULL, curDir, strlen(curDir));
-#endif
 							strcpy(curDir, tmp);
 							free(tmp);
 							D = opendir(curDir);
@@ -243,3 +244,33 @@ char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlag
 	free(curDir);
 	return ret;
 }
+#else
+char lpstrfilebuffer[MAX_PATH];
+
+char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlags flags) {
+	// After today, I rather hope I'll never have to touch this again :)
+	// Score was right, win32 is hell
+	lpstrfilebuffer[0]='\0';
+	OPENFILENAME  ofn;        
+	memset(&ofn,0,sizeof(ofn));
+	ofn.lStructSize     = sizeof(ofn);
+	ofn.hwndOwner       = NULL;
+	ofn.lpstrFilter     = NULL;    
+	ofn.lpstrFile       = lpstrfilebuffer;
+	ofn.nMaxFile        = MAX_PATH;
+	ofn.lpstrTitle      = "Please Select A File To Open";
+	ofn.Flags           = OFN_NONETWORKBUTTON |
+				OFN_FILEMUSTEXIST |
+				OFN_HIDEREADONLY;
+	if(flags&fileFlag_NewFiles) {
+		ofn.Flags |= OFN_OVERWRITEPROMPT;
+		if (GetSaveFileNameA(&ofn))
+			return ofn.lpstrFile;
+		return NULL;
+	} else {
+		if (GetOpenFileNameA(&ofn))
+			return ofn.lpstrFile;
+		return NULL;
+	}
+}
+#endif
