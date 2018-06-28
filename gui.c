@@ -201,7 +201,6 @@ char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlag
 							scroll = 0;
 							char *tmp = malloc(strlen(curDir));
 							realpath(curDir, tmp);
-							char *tmp = _fullpath(NULL, curDir, strlen(curDir));
 							strcpy(curDir, tmp);
 							free(tmp);
 							D = opendir(curDir);
@@ -251,11 +250,11 @@ char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlag
 	// After today, I rather hope I'll never have to touch this again :)
 	// Score was right, win32 is hell
 	lpstrfilebuffer[0]='\0';
-	OPENFILENAME  ofn;        
+	OPENFILENAME  ofn;
 	memset(&ofn,0,sizeof(ofn));
 	ofn.lStructSize     = sizeof(ofn);
 	ofn.hwndOwner       = NULL;
-	ofn.lpstrFilter     = NULL;    
+	ofn.lpstrFilter     = NULL;
 	ofn.lpstrFile       = lpstrfilebuffer;
 	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrTitle      = "Please Select A File To Open";
