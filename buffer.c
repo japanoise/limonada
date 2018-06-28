@@ -8,7 +8,6 @@
 #include "platform.h"
 #include "buffer.h"
 #define STBI_NO_JPEG // Jaypegs in a sprite editor? NOPE.
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #define GETINDEX(px, py) (buf->sizex*(py)*buf->datachannels)+(buf->datachannels*(px))

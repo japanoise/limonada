@@ -26,6 +26,7 @@ slice.h
 state.c
 state.h
 stb_image.h
+stb_image.c
 )
 
 add_executable(limonada ${SOURCES})
