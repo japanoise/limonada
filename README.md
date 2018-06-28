@@ -63,4 +63,4 @@ you off.
 - [Name suggested by PAUSE BREAK.](https://www.youtube.com/channel/UCLcDO-_j-ElBTrVcoaTfMKw)
 - [Arg.h from suckless; 20h. Link leads to a GitHub mirror.](https://github.com/japanoise/arg.h)
 - [Icon by nicubunu on OpenClipart.org](https://openclipart.org/detail/14858/lemonade-glass)
-- [Windows implementation of `dirent.h` by tronkko on GitHub](https://github.com/tronkko/dirent/)
+- [Image saving and loading from the stb library](https://github.com/nothings/stb)

@@ -15,6 +15,7 @@
 #include "icon.xpm"
 #include "tools.xpm"
 #include "platform.h"
+#include "stb_image_write.h"
 
 #define TITLE "Limonada"
 
@@ -109,7 +110,50 @@ SDL_bool actionSave(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 			}
 		}
 #endif
-		printf("PLACEHOLDER: saved %s\n", fn); // This doesn't print on windows, but not to worry, gdb says we have something in fn anyways.
+		int l = strlen(fn);
+		if (l<4) goto NOSAVE;
+
+		char *ext = malloc(5);
+		strncpy(ext, &fn[l-4], 5); // who needs more than 8.3
+		for(char *i=ext+1; *i!='\0'; i++) *i &= 0xDF; // upcase the extension
+
+		GETCURBUF;
+		if (strcmp(buf->filename, fn)) {
+			// Update buffer name
+			setBufferFileName(fn, buf);
+			char* bn = basename(fn);
+			if (buf->name != NULL && buf->name->String != NULL) DestroySlice(buf->name);
+			buf->name = MakeSlice(bn);
+#ifdef _WIN32
+			free(bn);
+#endif
+		}
+
+		if (strcmp(ext, ".PNG")==0) {
+			stbi_write_png(fn, buf->sizex, buf->sizey, buf->datachannels, buf->data, 0);
+		} else if (strcmp(ext, ".TGA")==0) {
+			stbi_write_tga(fn, buf->sizex, buf->sizey, buf->datachannels, buf->data);
+		} else if (strcmp(ext, ".BMP")==0) {
+			stbi_write_bmp(fn, buf->sizex, buf->sizey, buf->datachannels, buf->data);
+		} else {
+			const SDL_MessageBoxButtonData buttons[] = {
+				{SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "OK"},
+			};
+			const SDL_MessageBoxData messageboxdata = {
+				SDL_MESSAGEBOX_ERROR,
+				NULL,
+				ext,
+				"Filetype not supported",
+				SDL_arraysize(buttons),
+				buttons,
+				NULL
+			};
+			int but = 0;
+			SDL_ShowMessageBox(&messageboxdata, &but);
+		}
+		free(ext);
+
+	NOSAVE:
 #ifndef _WIN32
 		// In win32 this is a global variable that isn't dynamically allocated
 		free(fn);
