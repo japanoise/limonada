@@ -553,8 +553,13 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 				}
 			} else if (my<TOPBARHEIGHT+((COLORSIZE)*(buf->pal->len-buf->pal->scroll+1))) {
 				SDL_Color col = {0xFF, 0xFF, 0xFF, 0xFF};
-				if(pickColor(rend, font, &col))
-					addColorToPalette(buf->pal, col);
+				if(button == SDL_BUTTON_LEFT) {
+					if(pickColorHSV(rend, font, &col))
+						addColorToPalette(buf->pal, col);
+				} else if (button == SDL_BUTTON_RIGHT){
+					if(pickColor(rend, font, &col))
+						addColorToPalette(buf->pal, col);
+				}
 			}
 		}
 	} else if (global->curbuf != -1) {

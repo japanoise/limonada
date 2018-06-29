@@ -20,6 +20,7 @@ color.h
 dirent.h
 gui.c
 gui.h
+hsv.h
 main.c
 platform.c
 platform.h

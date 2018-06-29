@@ -13,6 +13,12 @@ $(PROGNAME): slice.o main.o state.o buffer.o gui.o platform.o stb_image.o color.
 cp437.xpm: cp437.png
 	convert $< $@
 
+hsv.h: hsv.png embed
+	./embed hsv.png hsv.h
+
+embed: embed.o
+	$(CC) -o $@ $^
+
 clean:
 	rm -rf *.o
 	rm -rf $(PROGNAME)

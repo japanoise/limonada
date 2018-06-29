@@ -6,4 +6,5 @@
 #include <SDL.h>
 #endif
 SDL_bool pickColor(SDL_Renderer *rend, SDL_Texture *font, SDL_Color *ret);
+SDL_bool pickColorHSV(SDL_Renderer *rend, SDL_Texture *font, SDL_Color *ret);
 #endif
