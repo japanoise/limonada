@@ -157,7 +157,7 @@ SDL_bool actionSave(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 		}
 		free(ext);
 
-	NOSAVE:
+	NOSAVE:;
 #ifndef _WIN32
 		// In win32 this is a global variable that isn't dynamically allocated
 		free(fn);
