@@ -16,6 +16,7 @@
 #include "tools.xpm"
 #include "platform.h"
 #include "stb_image_write.h"
+#include "color.h"
 
 #define TITLE "Limonada"
 
@@ -267,8 +268,6 @@ SDL_Rect selToolRect = {0, TOPBARHEIGHT, TOOLSIZE, TOOLSIZE};
 SDL_Rect primaryRect = {0, TOPBARHEIGHT+(5*TOOLSIZE)+LETHEIGHT, LEFTBARWIDTH-1, COLORSIZE};
 SDL_Rect secondaryRect = {0, TOPBARHEIGHT+(5*TOOLSIZE)+(LETHEIGHT*2)+COLORSIZE, LEFTBARWIDTH-1, COLORSIZE};
 
-#define XRECT(rect) SDL_RenderDrawLine(rend, rect.x, rect.y, rect.x+rect.w, rect.y+rect.h); SDL_RenderDrawLine(rend, rect.x, rect.y+rect.h, rect.x+rect.w, rect.y)
-
 void drawToolBar(SDL_Renderer *rend, SDL_Texture *font, SDL_Texture *tool, limonada *global, int mx, int my) {
 	SDL_RenderDrawLine(rend, LEFTBARWIDTH-1, TOPBARHEIGHT, LEFTBARWIDTH-1, WINHEIGHT-BOTBARHEIGHT);
 	SDL_RenderCopy(rend, tool, NULL, &toolsRect);
@@ -350,8 +349,12 @@ void drawPallete(SDL_Renderer *rend, SDL_Texture *font, limonada *global, int mx
 			SDL_RenderDrawRect(rend, &colorRect);
 			colorRect.y+=COLORSIZE;
 		}
+		SDL_RenderDrawLine(rend, colorRect.x+(COLORSIZE/2)-1, colorRect.y,
+				   colorRect.x+(COLORSIZE/2)-1, colorRect.y+colorRect.h-1);
+		SDL_RenderDrawLine(rend, colorRect.x, colorRect.y+(COLORSIZE/2),
+				   colorRect.x+colorRect.w-1, colorRect.y+(COLORSIZE/2));
 		if (anchor<mx && mx<WINWIDTH-SCROLLBARWIDTH &&
-		    TOPBARHEIGHT<my && my<TOPBARHEIGHT+(COLORSIZE*(buf->pal->len-buf->pal->scroll))) {
+		    TOPBARHEIGHT<my && my<TOPBARHEIGHT+(COLORSIZE*(buf->pal->len-buf->pal->scroll+1))) {
 			GREYCOL;
 			int selcol = ((my-TOPBARHEIGHT)/COLORSIZE);
 			colorRect.y = TOPBARHEIGHT+(selcol*COLORSIZE);
@@ -548,6 +551,10 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 				} else if (button == SDL_BUTTON_RIGHT) {
 					buf->secondary = buf->pal->colors[selcol];
 				}
+			} else if (my<TOPBARHEIGHT+((COLORSIZE)*(buf->pal->len-buf->pal->scroll+1))) {
+				SDL_Color col = {0xFF, 0xFF, 0xFF, 0xFF};
+				if(pickColor(rend, font, &col))
+					addColorToPalette(buf->pal, col);
 			}
 		}
 	} else if (global->curbuf != -1) {

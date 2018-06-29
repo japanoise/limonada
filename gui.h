@@ -12,12 +12,15 @@
 #define GREY_BG GREY, GREY, GREY, SDL_ALPHA_OPAQUE
 #define COL_FG 0, 0, 0, SDL_ALPHA_OPAQUE
 #define UNWRAP_COL(col) (col).r, (col).g, (col).b, (col).a
+#define UNWRAP_COL_PT(col) (col)->r, (col)->g, (col)->b, (col)->a
 #define COL_PRIM UNWRAP_COL(buf->primary)
 #define COL_SEC UNWRAP_COL(buf->secondary)
 #define BGCOL SDL_SetRenderDrawColor(rend, COL_BG)
 #define FGCOL SDL_SetRenderDrawColor(rend, COL_FG)
 #define GREYCOL SDL_SetRenderDrawColor(rend, GREY_BG)
 #define SCROLLBARWIDTH LETWIDTH+2
+#define XRECT(rect) SDL_RenderDrawLine(rend, (rect).x, (rect).y, ((rect).x+(rect).w)-1, ((rect).y+(rect).h)-1); SDL_RenderDrawLine(rend, (rect).x, ((rect).y+(rect).h)-1, ((rect).x+(rect).w)-1, (rect).y)
+#define INSIDE_RECT(rect, mx, my) ((rect).x<mx&&mx<(rect).x+(rect).w && (rect).y<my&&my<(rect).y+(rect).h)
 
 void drawText(SDL_Renderer *rend, char *text, SDL_Texture *font, int x, int y);
 

@@ -15,6 +15,8 @@ set(SOURCES
 arg.h
 buffer.c
 buffer.h
+color.c
+color.h
 dirent.h
 gui.c
 gui.h
