@@ -4,13 +4,18 @@
 #include <SDL.h>
 #endif
 
-#ifndef _WIN32
-#include <dirent.h>
+#ifndef NO_GTK
+#ifndef _MSC_VER
+#include <gtk/gtk.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #else
-// abandon hope all ye that enter here
-#include <windows.h>
+#include <gtk.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #endif
-
+#else
+#include <dirent.h>
+#endif
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include "gui.h"
@@ -28,6 +33,71 @@ void drawText(SDL_Renderer *rend, char *text, SDL_Texture *font, int x, int y) {
 	}
 }
 
+#ifndef NO_GTK
+static void
+update_preview_cb (GtkFileChooser *file_chooser, gpointer data)	{
+	GtkWidget *preview;
+	char *filename;
+	GdkPixbuf *pixbuf;
+	gboolean have_preview;
+
+	preview = GTK_WIDGET (data);
+	filename = gtk_file_chooser_get_preview_filename (file_chooser);
+
+	pixbuf = gdk_pixbuf_new_from_file_at_size (filename, 128, 128, NULL);
+	have_preview = (pixbuf != NULL);
+		g_free (filename);
+
+	gtk_image_set_from_pixbuf (GTK_IMAGE (preview), pixbuf);
+	if (pixbuf)
+		g_object_unref (pixbuf);
+
+	gtk_file_chooser_set_preview_widget_active (file_chooser, have_preview);
+}
+
+GtkWidget *create_filechooser_dialog(char *init_path, GtkFileChooserAction action){
+	GtkWidget *wdg = NULL;
+
+	switch (action) {
+		case GTK_FILE_CHOOSER_ACTION_SAVE:
+			wdg = gtk_file_chooser_dialog_new("Save file", NULL, action,
+				"Save", GTK_RESPONSE_OK,
+				"Cancel", GTK_RESPONSE_CANCEL,
+				NULL);
+			break;
+
+		case GTK_FILE_CHOOSER_ACTION_OPEN:
+			wdg = gtk_file_chooser_dialog_new("Open file", NULL, action,
+				"Open", GTK_RESPONSE_OK,
+				"Cancel", GTK_RESPONSE_CANCEL,
+				NULL);
+			GtkWidget *preview = gtk_image_new();
+			gtk_file_chooser_set_preview_widget(GTK_FILE_CHOOSER(wdg), preview);
+			g_signal_connect(wdg, "update-preview",
+				G_CALLBACK (update_preview_cb), preview);
+			break;
+	}
+	return wdg;
+}
+
+char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlags flags) {
+	GtkWidget *wdg;
+	if(flags&fileFlag_NewFiles) {
+		wdg = create_filechooser_dialog("", GTK_FILE_CHOOSER_ACTION_SAVE);
+	} else {
+		wdg = create_filechooser_dialog("", GTK_FILE_CHOOSER_ACTION_OPEN);
+	}
+	gint resp = gtk_dialog_run(GTK_DIALOG(wdg));
+	if (resp == GTK_RESPONSE_OK) {
+		char *ret = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wdg));
+		gtk_widget_destroy(wdg);
+		return ret;
+	} else {
+		gtk_widget_destroy(wdg);
+		return 0;
+	}
+}
+#else
 #ifndef _WIN32
 #define LEFT_FIRST -1
 #define EQUAL 0
@@ -243,33 +313,5 @@ char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlag
 	free(curDir);
 	return ret;
 }
-#else
-char lpstrfilebuffer[MAX_PATH];
-
-char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlags flags) {
-	// After today, I rather hope I'll never have to touch this again :)
-	// Score was right, win32 is hell
-	lpstrfilebuffer[0]='\0';
-	OPENFILENAME  ofn;
-	memset(&ofn,0,sizeof(ofn));
-	ofn.lStructSize     = sizeof(ofn);
-	ofn.hwndOwner       = NULL;
-	ofn.lpstrFilter     = NULL;
-	ofn.lpstrFile       = lpstrfilebuffer;
-	ofn.nMaxFile        = MAX_PATH;
-	ofn.lpstrTitle      = "Please Select A File To Open";
-	ofn.Flags           = OFN_NONETWORKBUTTON |
-				OFN_FILEMUSTEXIST |
-				OFN_HIDEREADONLY;
-	if(flags&fileFlag_NewFiles) {
-		ofn.Flags |= OFN_OVERWRITEPROMPT;
-		if (GetSaveFileNameA(&ofn))
-			return ofn.lpstrFile;
-		return NULL;
-	} else {
-		if (GetOpenFileNameA(&ofn))
-			return ofn.lpstrFile;
-		return NULL;
-	}
-}
+#endif
 #endif

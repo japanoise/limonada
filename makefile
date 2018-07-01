@@ -1,5 +1,5 @@
-CFLAGS=$(shell sdl2-config --cflags)
-LDFLAGS=$(shell sdl2-config --libs) -lSDL2_image -lm
+CFLAGS=$(shell pkg-config --cflags gtk+-2.0 sdl2)
+LDFLAGS=$(shell pkg-config --libs gtk+-2.0 sdl2 sdl2_image) -lm
 PROGNAME=limonada
 
 all: $(PROGNAME)
@@ -18,6 +18,9 @@ hsv.h: hsv.png embed
 
 embed: embed.o
 	$(CC) -o $@ $^
+
+$(PROGNAME).zip: $(PROGNAME).exe
+	zip $@ $^ *.dll
 
 clean:
 	rm -rf *.o

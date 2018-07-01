@@ -5,6 +5,13 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #endif
+#ifndef NO_GTK
+#ifndef _MSC_VER
+#include <gtk/gtk.h>
+#else
+#include <gtk.h>
+#endif
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include "arg.h"
@@ -669,6 +676,10 @@ int main(int argc, char *argv[]) {
 		default:
 			usage(argv0);
 	} ARGEND;
+
+	#ifndef NO_GTK
+	gtk_init(&argc, &argv);
+	#endif
 
 	// initialise state
 	limonada *global;
