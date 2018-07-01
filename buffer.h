@@ -76,6 +76,10 @@ SDL_Texture *textureFromBuffer(buffer* buf, SDL_Renderer *rend);
 
 void bufferSetPixel(buffer *buf, int px, int py, SDL_Color color);
 
+void bufferDrawLine(buffer *buf, SDL_Color color, int x0, int y0, int x1, int y1);
+
+void bufferPencil(buffer *buf, int px, int py, SDL_Color color);
+
 int bufferIsDirty(buffer *buf);
 
 void bufferStartUndo(buffer *buf);

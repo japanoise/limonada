@@ -577,7 +577,7 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 			case TOOL_PENCIL:
 				if (button==SDL_BUTTON_LEFT||button==SDL_BUTTON_RIGHT) {
 					bufferStartUndo(buf);
-					bufferSetPixel(buf, px, py, color);
+					bufferPencil(buf, px, py, color);
 				}
 				break;
 			case TOOL_PICKER:
