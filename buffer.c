@@ -196,25 +196,18 @@ void bufferSetPixel(buffer *buf, int px, int py, SDL_Color color) {
 	internal_bufferSetPixel(buf, index, color);
 }
 
+// https://rosettacode.org/wiki/Bitmap/Bresenham%27s_line_algorithm#C
 void bufferDrawLine(buffer *buf, SDL_Color color, int x0, int y0, int x1, int y1) {
-	int dx=x1-x0;
-	int dy=y1-y0;
+	int dx = abs(x1-x0), sx = x0<x1 ? 1 : -1;
+	int dy = abs(y1-y0), sy = y0<y1 ? 1 : -1;
+	int err = (dx>dy ? dx : -dy)/2, e2;
 
-	int x=x0;
-	int y=y0;
-
-	int p=2*dy-dx;
-
-	while(x<x1) {
-		if(p>=0) {
-			bufferSetPixel(buf, x, y, color);
-			y++;
-			p=p+2*dy-2*dx;
-		} else {
-			bufferSetPixel(buf, x, y, color);
-			p=p+2*dy;
-		}
-		x++;
+	for(;;){
+		bufferSetPixel(buf, x0, y0, color);
+		if (x0==x1 && y0==y1) break;
+		e2 = err;
+		if (e2 >-dx) { err -= dy; x0 += sx; }
+		if (e2 < dy) { err += dx; y0 += sy; }
 	}
 }
 
