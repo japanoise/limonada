@@ -41,6 +41,9 @@
 #define TOOL_LINE 7
 #define TOOL_RECT 8
 #define TOOL_COLORTOCOLOR 9
+int linepx = -1;
+int linepy = -1;
+SDL_Color linec;
 
 int WINWIDTH  = 800;
 int WINHEIGHT = 600;
@@ -589,6 +592,12 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 					addColorToPalette(buf->pal, bufferGetColorAt(buf, px, py));
 				}
 				break;
+			case TOOL_LINE:
+				if (button==SDL_BUTTON_LEFT||button==SDL_BUTTON_RIGHT) {
+					linepx = px;
+					linepy = py;
+					linec = color;
+				}
 			}
 		}
 	}
@@ -727,6 +736,14 @@ int main(int argc, char *argv[]) {
 		FGCOL;
 		if (global->curbuf != -1) {
 			drawBuffer(rend, global);
+			if (linepx!=-1 && linepy !=-1) {
+				GETCURBUF;
+				UPDATEPXPY;
+				SDL_SetRenderDrawColor(rend, UNWRAP_COL(linec));
+				SDL_RenderDrawLine(rend, (linepx*buf->zoom)+LEFTBARWIDTH,
+						   (linepy*buf->zoom)+TOPBARHEIGHT, mx, my);
+				FGCOL;
+			}
 		}
 		drawToolBar(rend, font, tool, global, mx, my);
 		drawPallete(rend, font, global, mx, my);
@@ -806,6 +823,21 @@ int main(int argc, char *argv[]) {
 					case TOOL_PENCIL:
 						if (buf->undoList != NULL && buf->undoList->type!=EndUndo) {
 							bufferEndUndo(buf);
+						}
+						break;
+					case TOOL_LINE:
+						if (linepx != -1 && linepy != -1) {
+							UPDATEPXPY;
+							bufferStartUndo(buf);
+							int epx = px;
+							int epy = py;
+							if (epx>buf->sizex) epx = buf->sizex-1;
+							else if (epx<0) epx = 0;
+							if (epy>buf->sizey) epy = buf->sizey-1;
+							else if (epy<0) epy = 0;
+							bufferDrawLine(buf, linec, linepx, linepy, epx, epy);
+							bufferEndUndo(buf);
+							linepx = linepy = -1;
 						}
 						break;
 					}
