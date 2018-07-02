@@ -16,7 +16,7 @@ do
 	echo "Formatting $file"
 	# I have a bad habit of using sepples-style comments; fix 'em
 	# This (should) ignore //s that are preceded by a :, i.e. URLs.
-	sed -i -e 's|^[^:]*//\(.*\)$|/*\1 */|' "$file"
+	sed -i -e 's|^\([^:]*\)*//\(.*\)$|\1/*\2 */|'"$file"
 	# Now actually call indent on the file
 	indent -linux -l100 "$file"
 	rm "$file"~ # no backups, we have git for this!!
