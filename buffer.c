@@ -243,6 +243,27 @@ void bufferDrawLine(buffer * buf, SDL_Color color, int x0, int y0, int x1, int y
 	}
 }
 
+void bufferFloodFill(buffer * buf, int px, int py, SDL_Color old, SDL_Color new) {
+	// quit early if OOB
+	if(px>=buf->sizex||px<0||py>=buf->sizey||py<0) return;
+	int index = GETINDEX(px, py);
+	// If color same as old color
+	if(buf->data[index]==old.r && buf->data[index+1] == old.g && buf->data[index+2] == old.b
+	     && (buf->datachannels==STBI_rgb || buf->data[index+3] == old.a)) {
+		bufferSetPixel(buf, px, py, new);
+		bufferFloodFill(buf, px, py+1, old, new);
+		bufferFloodFill(buf, px, py-1, old, new);
+		bufferFloodFill(buf, px+1, py, old, new);
+		bufferFloodFill(buf, px-1, py, old, new);
+	}
+}
+
+void bufferDoFloodFill(buffer * buf, int px, int py, SDL_Color new) {
+	bufferStartUndo(buf);
+	bufferFloodFill(buf, px, py, bufferGetColorAt(buf, px, py), new);
+	bufferEndUndo(buf);
+}
+
 void bufferPencil(buffer * buf, int px, int py, SDL_Color color)
 {
 	if (lastpx != -1 && lastpy != -1) {

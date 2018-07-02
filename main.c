@@ -647,6 +647,10 @@ SDL_bool click(SDL_Renderer * rend, SDL_Texture * font, limonada * global, menub
 					linepy = py;
 					linec = color;
 				}
+			case TOOL_FILL:
+				if (button == SDL_BUTTON_LEFT || button == SDL_BUTTON_RIGHT) {
+					bufferDoFloodFill(buf, px, py, color);
+				}
 			}
 		}
 	}

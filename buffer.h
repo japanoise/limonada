@@ -90,5 +90,7 @@ void bufferDoUndo(buffer * buf);
 
 void bufferDoRedo(buffer * buf);
 
+void bufferDoFloodFill(buffer * buf, int px, int py, SDL_Color new);
+
 SDL_Color bufferGetColorAt(buffer * buf, int x, int y);
 #endif
