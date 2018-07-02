@@ -82,6 +82,7 @@ GtkWidget *create_filechooser_dialog(char *init_path, GtkFileChooserAction actio
 
 char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlags flags) {
 	GtkWidget *wdg;
+	char *ret = NULL;
 	if(flags&fileFlag_NewFiles) {
 		wdg = create_filechooser_dialog("", GTK_FILE_CHOOSER_ACTION_SAVE);
 	} else {
@@ -89,13 +90,13 @@ char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlag
 	}
 	gint resp = gtk_dialog_run(GTK_DIALOG(wdg));
 	if (resp == GTK_RESPONSE_OK) {
-		char *ret = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wdg));
-		gtk_widget_destroy(wdg);
-		return ret;
-	} else {
-		gtk_widget_destroy(wdg);
-		return 0;
+		ret = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wdg));
 	}
+	gtk_widget_destroy(wdg);
+	// Wait for the destroy event and eat it (i.e. execute it)
+	while (gtk_events_pending())
+		gtk_main_iteration ();
+	return ret;
 }
 #else
 #ifndef _WIN32
