@@ -2,7 +2,8 @@
 #include <string.h>
 #include "slice.h"
 
-StrSlice *MakeSlice(char *str) {
+StrSlice *MakeSlice(char *str)
+{
 	StrSlice *ret = malloc(sizeof(StrSlice));
 	ret->len = strlen(str);
 	ret->String = malloc(ret->len);
@@ -10,7 +11,8 @@ StrSlice *MakeSlice(char *str) {
 	return ret;
 }
 
-void DestroySlice(StrSlice *s) {
+void DestroySlice(StrSlice * s)
+{
 	free(s->String);
 	free(s);
 }

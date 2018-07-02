@@ -4,12 +4,14 @@
 
 extern int errno;
 
-void usage(char **argv) {
+void usage(char **argv)
+{
 	printf("usage: %s infile outfile\n", argv[0]);
 }
 
-int main (int argc, char **argv) {
-	if (argc<3) {
+int main(int argc, char **argv)
+{
+	if (argc < 3) {
 		usage(argv);
 		return 1;
 	}
@@ -26,34 +28,34 @@ int main (int argc, char **argv) {
 		fprintf(stderr, "%s\n", strerror(errno));
 		return 1;
 	}
-
-	// sanitize the output filename (for use in variables)
-	for(char *c = argv[1]; *c!='\0'; c++) {
-		if ('a'<=*c&&*c<='z') {
-			*c &= 0xDF; // upcase
-		} else if ('A'<=*c&&*c<='Z') {
-			// do nothing
+	/* sanitize the output filename (for use in variables) */
+	for (char *c = argv[1]; *c != '\0'; c++) {
+		if ('a' <= *c && *c <= 'z') {
+			*c &= 0xDF;	/* upcase */
+		} else if ('A' <= *c && *c <= 'Z') {
+			/* do nothing */
 		} else {
 			*c = '_';
 		}
 	}
 
-	// output bytes
+	/* output bytes */
 	fprintf(outfile, "unsigned char* %s = {", argv[1]);
 	int c;
 	int datsize = 0;
 	while ((c = fgetc(infile)) != EOF) {
-		if(datsize!=0) fprintf(outfile, ",");
+		if (datsize != 0)
+			fprintf(outfile, ",");
 		fprintf(outfile, "%#x", c);
 		datsize++;
 	}
 	fprintf(outfile, "};\n");
-	fclose(infile); // no longer needed
+	fclose(infile);		/* no longer needed */
 
-	// output length
+	/* output length */
 	fprintf(outfile, "int %s_LEN = %d;\n", argv[1], datsize);
 
-	// clean up and exit
+	/* clean up and exit */
 	fclose(outfile);
 	return 0;
 }

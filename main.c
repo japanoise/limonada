@@ -52,20 +52,22 @@ int linepx = -1;
 int linepy = -1;
 SDL_Color linec;
 
-int WINWIDTH  = 800;
+int WINWIDTH = 800;
 int WINHEIGHT = 600;
-const Uint8* keyboardState;
+const Uint8 *keyboardState;
 #define KEYDOWN(key) keyboardState[SDL_GetScancodeFromKey(key)]
 #define CTRL_DOWN (KEYDOWN(SDLK_LCTRL)||KEYDOWN(SDLK_RCTRL))
 #define SHIFT_DOWN (KEYDOWN(SDLK_LSHIFT)||KEYDOWN(SDLK_RSHIFT))
 
-typedef SDL_bool (*menuItemCallback)(SDL_Renderer *rend, SDL_Texture *font, limonada *global);
+typedef SDL_bool(*menuItemCallback) (SDL_Renderer * rend, SDL_Texture * font, limonada * global);
 
-SDL_bool actionQuit(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
+SDL_bool actionQuit(SDL_Renderer * rend, SDL_Texture * font, limonada * global)
+{
 	return SDL_FALSE;
 }
 
-SDL_bool actionUndo(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
+SDL_bool actionUndo(SDL_Renderer * rend, SDL_Texture * font, limonada * global)
+{
 	if (global->curbuf != -1) {
 		GETCURBUF;
 		bufferDoUndo(buf);
@@ -73,7 +75,8 @@ SDL_bool actionUndo(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 	return SDL_TRUE;
 }
 
-SDL_bool actionRedo(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
+SDL_bool actionRedo(SDL_Renderer * rend, SDL_Texture * font, limonada * global)
+{
 	if (global->curbuf != -1) {
 		GETCURBUF;
 		bufferDoRedo(buf);
@@ -81,25 +84,28 @@ SDL_bool actionRedo(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 	return SDL_TRUE;
 }
 
-SDL_bool actionOpen(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
+SDL_bool actionOpen(SDL_Renderer * rend, SDL_Texture * font, limonada * global)
+{
 	char *fn = fileBrowse(rend, font, getenv("HOME"), 0);
-	if (fn != NULL){
+	if (fn != NULL) {
 		buffer *buf = makeBufferFromFile(fn);
-		global->curbuf=appendBuffer(global->buffers, buf);
+		global->curbuf = appendBuffer(global->buffers, buf);
 #ifndef _WIN32
-		// In win32 this is a global variable that isn't dynamically allocated
+		/* In win32 this is a global variable that isn't dynamically allocated */
 		free(fn);
 #endif
 	}
 	return SDL_TRUE;
 }
 
-SDL_bool actionSave(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
-	if (global->curbuf == -1) return SDL_TRUE;
+SDL_bool actionSave(SDL_Renderer * rend, SDL_Texture * font, limonada * global)
+{
+	if (global->curbuf == -1)
+		return SDL_TRUE;
 	char *fn = fileBrowse(rend, font, getenv("HOME"), fileFlag_NewFiles);
-	if (fn != NULL){
+	if (fn != NULL) {
 #ifndef _WIN32
-		// Overwrite confirmation done automagically on Windows
+		/* Overwrite confirmation done automagically on Windows */
 		if (fexist(fn)) {
 			const SDL_MessageBoxButtonData buttons[] = {
 				{SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "yes"},
@@ -115,36 +121,39 @@ SDL_bool actionSave(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 				NULL
 			};
 			int buttonid = -1;
-			if (SDL_ShowMessageBox(&messageboxdata, &buttonid)<0 || buttonid != 0) {
+			if (SDL_ShowMessageBox(&messageboxdata, &buttonid) < 0 || buttonid != 0) {
 				free(fn);
 				return SDL_TRUE;
 			}
 		}
 #endif
 		int l = strlen(fn);
-		if (l<4) goto NOSAVE;
+		if (l < 4)
+			goto NOSAVE;
 
 		char *ext = malloc(5);
-		strncpy(ext, &fn[l-4], 5); // who needs more than 8.3
-		for(char *i=ext+1; *i!='\0'; i++) *i &= 0xDF; // upcase the extension
+		strncpy(ext, &fn[l - 4], 5);	/* who needs more than 8.3 */
+		for (char *i = ext + 1; *i != '\0'; i++)
+			*i &= 0xDF;	/* upcase the extension */
 
 		GETCURBUF;
 		if (strcmp(buf->filename, fn)) {
-			// Update buffer name
+			/* Update buffer name */
 			setBufferFileName(fn, buf);
-			char* bn = basename(fn);
-			if (buf->name != NULL && buf->name->String != NULL) DestroySlice(buf->name);
+			char *bn = basename(fn);
+			if (buf->name != NULL && buf->name->String != NULL)
+				DestroySlice(buf->name);
 			buf->name = MakeSlice(bn);
 #ifdef _WIN32
 			free(bn);
 #endif
 		}
 
-		if (strcmp(ext, ".PNG")==0) {
+		if (strcmp(ext, ".PNG") == 0) {
 			stbi_write_png(fn, buf->sizex, buf->sizey, buf->datachannels, buf->data, 0);
-		} else if (strcmp(ext, ".TGA")==0) {
+		} else if (strcmp(ext, ".TGA") == 0) {
 			stbi_write_tga(fn, buf->sizex, buf->sizey, buf->datachannels, buf->data);
-		} else if (strcmp(ext, ".BMP")==0) {
+		} else if (strcmp(ext, ".BMP") == 0) {
 			stbi_write_bmp(fn, buf->sizex, buf->sizey, buf->datachannels, buf->data);
 		} else {
 			const SDL_MessageBoxButtonData buttons[] = {
@@ -164,9 +173,9 @@ SDL_bool actionSave(SDL_Renderer* rend, SDL_Texture* font, limonada *global) {
 		}
 		free(ext);
 
-	NOSAVE:;
+ NOSAVE:	;
 #ifndef _WIN32
-		// In win32 this is a global variable that isn't dynamically allocated
+		/* In win32 this is a global variable that isn't dynamically allocated */
 		free(fn);
 #endif
 	}
@@ -187,27 +196,29 @@ typedef struct {
 	int vis;
 } menubar;
 
-menubar *makeMenuBar(char **titles, int ntitles) {
+menubar *makeMenuBar(char **titles, int ntitles)
+{
 	menubar *ret = malloc(sizeof(menubar));
-	ret->submenus = malloc(sizeof(submenu**)*ntitles);
-	ret->titles = malloc(sizeof(StrSlice**)*ntitles);
+	ret->submenus = malloc(sizeof(submenu **) * ntitles);
+	ret->titles = malloc(sizeof(StrSlice **) * ntitles);
 	ret->ntitles = ntitles;
 	ret->vis = -1;
-	for(int i = 0; i<ntitles; i++) {
-		ret->titles[i]=MakeSlice(titles[i]);
+	for (int i = 0; i < ntitles; i++) {
+		ret->titles[i] = MakeSlice(titles[i]);
 	}
 	return ret;
 }
 
-submenu *makeSubmenu(char **entries, int nentries) {
+submenu *makeSubmenu(char **entries, int nentries)
+{
 	submenu *ret = malloc(sizeof(submenu));
-	ret->entries = malloc(sizeof(StrSlice**)*nentries);
-	ret->callbacks = malloc(sizeof(menuItemCallback)*nentries);
+	ret->entries = malloc(sizeof(StrSlice **) * nentries);
+	ret->callbacks = malloc(sizeof(menuItemCallback) * nentries);
 	ret->nentries = nentries;
 	ret->width = 0;
-	for(int i=0; i<nentries; i++) {
-		ret->entries[i]=MakeSlice(entries[i]);
-		if(ret->entries[i]->len > ret->width) {
+	for (int i = 0; i < nentries; i++) {
+		ret->entries[i] = MakeSlice(entries[i]);
+		if (ret->entries[i]->len > ret->width) {
 			ret->width = ret->entries[i]->len;
 		}
 		ret->callbacks[i] = NULL;
@@ -215,36 +226,38 @@ submenu *makeSubmenu(char **entries, int nentries) {
 	return ret;
 }
 
-void drawMenuBar(menubar *m, SDL_Renderer *rend, SDL_Texture *font, int mx, int my) {
-	SDL_RenderDrawLine(rend, 0, LETHEIGHT+2, WINWIDTH, LETHEIGHT+2);
+void drawMenuBar(menubar * m, SDL_Renderer * rend, SDL_Texture * font, int mx, int my)
+{
+	SDL_RenderDrawLine(rend, 0, LETHEIGHT + 2, WINWIDTH, LETHEIGHT + 2);
 	int ix = 0;
 	int ox = 0;
-	for(int i=0; i<m->ntitles; i++) {
-		drawText(rend, m->titles[i]->String, font, ix+2, 1);
+	for (int i = 0; i < m->ntitles; i++) {
+		drawText(rend, m->titles[i]->String, font, ix + 2, 1);
 		ox = ix;
-		ix += (m->titles[i]->len+1)*LETWIDTH;
-		if (my < LETHEIGHT && mx >=ox && mx < ix) {
-			SDL_Rect r = {ox, 0, ix-ox, LETHEIGHT+2};
+		ix += (m->titles[i]->len + 1) * LETWIDTH;
+		if (my < LETHEIGHT && mx >= ox && mx < ix) {
+			SDL_Rect r = { ox, 0, ix - ox, LETHEIGHT + 2 };
 			SDL_RenderDrawRect(rend, &r);
 			if (m->vis != -1) {
 				m->vis = i;
 			}
 		}
-		if (m->vis == i && m->submenus[i] != NULL){
+		if (m->vis == i && m->submenus[i] != NULL) {
 			BGCOL;
-			int smw = (m->submenus[i]->width*LETWIDTH)+4;
-			SDL_Rect rect = {ox, LETHEIGHT+2, smw,
-		        	2+(LETHEIGHT*m->submenus[i]->nentries)};
+			int smw = (m->submenus[i]->width * LETWIDTH) + 4;
+			SDL_Rect rect = { ox, LETHEIGHT + 2, smw,
+				2 + (LETHEIGHT * m->submenus[i]->nentries)
+			};
 			SDL_RenderFillRect(rend, &rect);
 			FGCOL;
 			SDL_RenderDrawRect(rend, &rect);
-			for(int j=0; j<m->submenus[i]->nentries; j++) {
-				int iy = LETHEIGHT+3+(j*LETHEIGHT);
+			for (int j = 0; j < m->submenus[i]->nentries; j++) {
+				int iy = LETHEIGHT + 3 + (j * LETHEIGHT);
 				drawText(rend, m->submenus[i]->entries[j]->String,
-					font, ox+2, iy);
-				if (ox <= mx && mx <= ox+smw && iy < my && my <= iy+LETHEIGHT) {
-					rect.y=iy;
-					rect.h=LETHEIGHT;
+					 font, ox + 2, iy);
+				if (ox <= mx && mx <= ox + smw && iy < my && my <= iy + LETHEIGHT) {
+					rect.y = iy;
+					rect.h = LETHEIGHT;
 					SDL_RenderDrawRect(rend, &rect);
 				}
 			}
@@ -252,66 +265,75 @@ void drawMenuBar(menubar *m, SDL_Renderer *rend, SDL_Texture *font, int mx, int 
 	}
 }
 
-void drawTabBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar *m, int mx, int my) {
-	const int botanchor = (2*LETHEIGHT)+4;
+void drawTabBar(SDL_Renderer * rend, SDL_Texture * font, limonada * global, menubar * m, int mx,
+		int my)
+{
+	const int botanchor = (2 * LETHEIGHT) + 4;
 	SDL_RenderDrawLine(rend, 0, botanchor, WINWIDTH, botanchor);
 	int ix = 0;
 	int ox = 0;
-	for (int i=0; i<global->buffers->len; i++) {
+	for (int i = 0; i < global->buffers->len; i++) {
 		StrSlice *bufname = global->buffers->data[i]->name;
-		drawText(rend, bufname->String, font, ix+2, botanchor-LETHEIGHT);
+		drawText(rend, bufname->String, font, ix + 2, botanchor - LETHEIGHT);
 		ox = ix;
-		ix += (bufname->len+1)*LETWIDTH+2;
-		SDL_RenderDrawLine(rend, ix-1, botanchor-LETHEIGHT-1, ix-1, botanchor);
-		if (i==global->curbuf) {
-			SDL_RenderDrawLine(rend, ox, botanchor-2, ix-1, botanchor-2);
+		ix += (bufname->len + 1) * LETWIDTH + 2;
+		SDL_RenderDrawLine(rend, ix - 1, botanchor - LETHEIGHT - 1, ix - 1, botanchor);
+		if (i == global->curbuf) {
+			SDL_RenderDrawLine(rend, ox, botanchor - 2, ix - 1, botanchor - 2);
 		}
-		if (LETHEIGHT+2 < my && my < botanchor && mx >=ox && mx < ix && m->vis==-1) {
-			SDL_Rect r = {ox, botanchor-LETHEIGHT-1, ix-ox-1, LETHEIGHT+1};
+		if (LETHEIGHT + 2 < my && my < botanchor && mx >= ox && mx < ix && m->vis == -1) {
+			SDL_Rect r = { ox, botanchor - LETHEIGHT - 1, ix - ox - 1, LETHEIGHT + 1 };
 			SDL_RenderDrawRect(rend, &r);
 		}
 	}
 }
 
-SDL_Rect toolsRect = {0, TOPBARHEIGHT, 2*TOOLSIZE, 5*TOOLSIZE};
-SDL_Rect selToolRect = {0, TOPBARHEIGHT, TOOLSIZE, TOOLSIZE};
-SDL_Rect primaryRect = {0, TOPBARHEIGHT+(5*TOOLSIZE)+LETHEIGHT, LEFTBARWIDTH-1, COLORSIZE};
-SDL_Rect secondaryRect = {0, TOPBARHEIGHT+(5*TOOLSIZE)+(LETHEIGHT*2)+COLORSIZE, LEFTBARWIDTH-1, COLORSIZE};
+SDL_Rect toolsRect = { 0, TOPBARHEIGHT, 2 * TOOLSIZE, 5 * TOOLSIZE };
+SDL_Rect selToolRect = { 0, TOPBARHEIGHT, TOOLSIZE, TOOLSIZE };
+SDL_Rect primaryRect =
+    { 0, TOPBARHEIGHT + (5 * TOOLSIZE) + LETHEIGHT, LEFTBARWIDTH - 1, COLORSIZE };
+SDL_Rect secondaryRect =
+    { 0, TOPBARHEIGHT + (5 * TOOLSIZE) + (LETHEIGHT * 2) + COLORSIZE, LEFTBARWIDTH - 1, COLORSIZE };
 
-void drawToolBar(SDL_Renderer *rend, SDL_Texture *font, SDL_Texture *tool, limonada *global, int mx, int my) {
-	SDL_RenderDrawLine(rend, LEFTBARWIDTH-1, TOPBARHEIGHT, LEFTBARWIDTH-1, WINHEIGHT-BOTBARHEIGHT);
+void drawToolBar(SDL_Renderer * rend, SDL_Texture * font, SDL_Texture * tool, limonada * global,
+		 int mx, int my)
+{
+	SDL_RenderDrawLine(rend, LEFTBARWIDTH - 1, TOPBARHEIGHT, LEFTBARWIDTH - 1,
+			   WINHEIGHT - BOTBARHEIGHT);
 	SDL_RenderCopy(rend, tool, NULL, &toolsRect);
 	if (global->curbuf != -1) {
 		buffer *buf = global->buffers->data[global->curbuf];
-		if (1&buf->tool) {
-			selToolRect.x=TOOLSIZE;
+		if (1 & buf->tool) {
+			selToolRect.x = TOOLSIZE;
 		} else {
-			selToolRect.x=0;
+			selToolRect.x = 0;
 		}
-		selToolRect.y = ((buf->tool/2)*TOOLSIZE)+TOPBARHEIGHT;
+		selToolRect.y = ((buf->tool / 2) * TOOLSIZE) + TOPBARHEIGHT;
 		SDL_RenderDrawRect(rend, &selToolRect);
 
-		// draw black Xs under the color area; shows transparency
+		/* draw black Xs under the color area; shows transparency */
 		XRECT(primaryRect);
 		XRECT(secondaryRect);
 
-		drawText(rend, "1:", font, 0, TOPBARHEIGHT+(5*TOOLSIZE));
+		drawText(rend, "1:", font, 0, TOPBARHEIGHT + (5 * TOOLSIZE));
 		SDL_SetRenderDrawColor(rend, COL_PRIM);
 		SDL_RenderFillRect(rend, &primaryRect);
 		FGCOL;
 		SDL_RenderDrawRect(rend, &primaryRect);
 
-		drawText(rend, "2:", font, 0, TOPBARHEIGHT+(5*TOOLSIZE)+LETHEIGHT+COLORSIZE);
+		drawText(rend, "2:", font, 0,
+			 TOPBARHEIGHT + (5 * TOOLSIZE) + LETHEIGHT + COLORSIZE);
 		SDL_SetRenderDrawColor(rend, COL_SEC);
 		SDL_RenderFillRect(rend, &secondaryRect);
 		FGCOL;
 		SDL_RenderDrawRect(rend, &secondaryRect);
 
-		if (mx<LEFTBARWIDTH && TOPBARHEIGHT<my && my<TOPBARHEIGHT+(5*TOOLSIZE)) {
-			selToolRect.x=0;
-			selToolRect.y=(((my-TOPBARHEIGHT)/TOOLSIZE)*TOOLSIZE)+TOPBARHEIGHT;
-			if (mx>TOOLSIZE) {
-				selToolRect.x=TOOLSIZE;
+		if (mx < LEFTBARWIDTH && TOPBARHEIGHT < my && my < TOPBARHEIGHT + (5 * TOOLSIZE)) {
+			selToolRect.x = 0;
+			selToolRect.y =
+			    (((my - TOPBARHEIGHT) / TOOLSIZE) * TOOLSIZE) + TOPBARHEIGHT;
+			if (mx > TOOLSIZE) {
+				selToolRect.x = TOOLSIZE;
 			}
 			GREYCOL;
 			SDL_RenderDrawRect(rend, &selToolRect);
@@ -320,110 +342,118 @@ void drawToolBar(SDL_Renderer *rend, SDL_Texture *font, SDL_Texture *tool, limon
 	}
 }
 
-SDL_Rect scrollRect = {0, 0, SCROLLBARWIDTH, 0};
+SDL_Rect scrollRect = { 0, 0, SCROLLBARWIDTH, 0 };
 
-void drawScrollBar(SDL_Renderer *rend, SDL_Texture *font, int x, int y, int numitems, int scr, int containerheight, int contentItemHeight) {
-	if (scr>0)
-		drawText(rend, "\x1e", font, x+1, y);// up arrow
+void drawScrollBar(SDL_Renderer * rend, SDL_Texture * font, int x, int y, int numitems, int scr,
+		   int containerheight, int contentItemHeight)
+{
+	if (scr > 0)
+		drawText(rend, "\x1e", font, x + 1, y);	/* up arrow */
 
-	if ((scr*contentItemHeight)+containerheight<(numitems)*contentItemHeight)
-		drawText(rend, "\x1f", font, x+1, (y+containerheight)-LETHEIGHT);// down arrow
+	if ((scr * contentItemHeight) + containerheight < (numitems) * contentItemHeight)
+		drawText(rend, "\x1f", font, x + 1, (y + containerheight) - LETHEIGHT);	/* down arrow */
 
 	/*this commented out block is a partial implementation of a classic scroll bar
-	  however, I can't figure out how to calculate the thumbscrew size and position :c
-	drawText(rend, "\x1e", font, x+1, y);// up arrow
-	drawText(rend, "\x1f", font, x+1, (y+containerheight)-LETHEIGHT);// down arrow
-	int lx = x+(LETWIDTH/2);
-	SDL_RenderDrawLine(rend, lx, y+LETHEIGHT, lx, (y+containerheight)-(LETHEIGHT+1));
-	int scrh = containerheight-(2*LETHEIGHT);
-	scrollRect.h = scrh;
-	scrollRect.x = x;
-	scrollRect.y = y+LETHEIGHT;
-	SDL_RenderDrawRect(rend, &scrollRect);*/
+	   however, I can't figure out how to calculate the thumbscrew size and position :c
+	   drawText(rend, "\x1e", font, x+1, y);
+	   drawText(rend, "\x1f", font, x + 1, (y + containerheight) - LETHEIGHT);
+	   int lx = x + (LETWIDTH / 2);
+	   SDL_RenderDrawLine(rend, lx, y + LETHEIGHT, lx, (y + containerheight) - (LETHEIGHT + 1));
+	   int scrh = containerheight - (2 * LETHEIGHT);
+	   scrollRect.h = scrh;
+	   scrollRect.x = x;
+	   scrollRect.y = y + LETHEIGHT;
+	   SDL_RenderDrawRect(rend, &scrollRect); */
 }
 
-SDL_Rect colorRect = {0, TOPBARHEIGHT, COLORSIZE, COLORSIZE};
+SDL_Rect colorRect = { 0, TOPBARHEIGHT, COLORSIZE, COLORSIZE };
 
-void drawPallete(SDL_Renderer *rend, SDL_Texture *font, limonada *global, int mx, int my) {
-	int anchor = WINWIDTH-RIGHTBARWIDTH;
-	SDL_RenderDrawLine(rend, anchor, TOPBARHEIGHT, anchor, WINHEIGHT-BOTBARHEIGHT);
+void drawPallete(SDL_Renderer * rend, SDL_Texture * font, limonada * global, int mx, int my)
+{
+	int anchor = WINWIDTH - RIGHTBARWIDTH;
+	SDL_RenderDrawLine(rend, anchor, TOPBARHEIGHT, anchor, WINHEIGHT - BOTBARHEIGHT);
 	if (global->curbuf != -1) {
 		GETCURBUF;
-		colorRect.x = anchor+1;
+		colorRect.x = anchor + 1;
 		colorRect.y = TOPBARHEIGHT;
-		for(int i = buf->pal->scroll; i<buf->pal->len; i++) {
+		for (int i = buf->pal->scroll; i < buf->pal->len; i++) {
 			XRECT(colorRect);
 			SDL_SetRenderDrawColor(rend, UNWRAP_COL(buf->pal->colors[i]));
 			SDL_RenderFillRect(rend, &colorRect);
 			FGCOL;
 			SDL_RenderDrawRect(rend, &colorRect);
-			colorRect.y+=COLORSIZE;
+			colorRect.y += COLORSIZE;
 		}
-		SDL_RenderDrawLine(rend, colorRect.x+(COLORSIZE/2)-1, colorRect.y,
-				   colorRect.x+(COLORSIZE/2)-1, colorRect.y+colorRect.h-1);
-		SDL_RenderDrawLine(rend, colorRect.x, colorRect.y+(COLORSIZE/2),
-				   colorRect.x+colorRect.w-1, colorRect.y+(COLORSIZE/2));
-		if (anchor<mx && mx<WINWIDTH-SCROLLBARWIDTH &&
-		    TOPBARHEIGHT<my && my<TOPBARHEIGHT+(COLORSIZE*(buf->pal->len-buf->pal->scroll+1))) {
+		SDL_RenderDrawLine(rend, colorRect.x + (COLORSIZE / 2) - 1, colorRect.y,
+				   colorRect.x + (COLORSIZE / 2) - 1,
+				   colorRect.y + colorRect.h - 1);
+		SDL_RenderDrawLine(rend, colorRect.x, colorRect.y + (COLORSIZE / 2),
+				   colorRect.x + colorRect.w - 1, colorRect.y + (COLORSIZE / 2));
+		if (anchor < mx && mx < WINWIDTH - SCROLLBARWIDTH && TOPBARHEIGHT < my
+		    && my < TOPBARHEIGHT + (COLORSIZE * (buf->pal->len - buf->pal->scroll + 1))) {
 			GREYCOL;
-			int selcol = ((my-TOPBARHEIGHT)/COLORSIZE);
-			colorRect.y = TOPBARHEIGHT+(selcol*COLORSIZE);
+			int selcol = ((my - TOPBARHEIGHT) / COLORSIZE);
+			colorRect.y = TOPBARHEIGHT + (selcol * COLORSIZE);
 			SDL_RenderDrawRect(rend, &colorRect);
 			FGCOL;
 		}
-		drawScrollBar(rend, font, anchor+COLORSIZE+1, TOPBARHEIGHT, buf->pal->len, buf->pal->scroll, DRAWAREAHEIGHT, COLORSIZE);
+		drawScrollBar(rend, font, anchor + COLORSIZE + 1, TOPBARHEIGHT, buf->pal->len,
+			      buf->pal->scroll, DRAWAREAHEIGHT, COLORSIZE);
 	}
 }
 
 #define BUFSIZE 20
 char stat_size[BUFSIZE];
-int stat_size_len=0;
+int stat_size_len = 0;
 char stat_xy[BUFSIZE];
-int stat_xy_len=0;
+int stat_xy_len = 0;
 #define ZOOMSIZE 10
 char stat_zoom[ZOOMSIZE];
-int stat_zoom_len=0;
+int stat_zoom_len = 0;
 int px = 0;
 int py = 0;
 #define UPDATEPXPY px=buf->panx+((mx-LEFTBARWIDTH)/buf->zoom); py=buf->pany+((my-TOPBARHEIGHT)/buf->zoom);stat_xy_len=snprintf(stat_xy, BUFSIZE, "%i,%i", px, py);stat_zoom_len=snprintf(stat_zoom, ZOOMSIZE, "%i%%", buf->zoom*100);
 
-void drawStatBar(SDL_Renderer *rend, SDL_Texture *font, limonada *global) {
-	int anchor = WINHEIGHT-BOTBARHEIGHT;
+void drawStatBar(SDL_Renderer * rend, SDL_Texture * font, limonada * global)
+{
+	int anchor = WINHEIGHT - BOTBARHEIGHT;
 	SDL_RenderDrawLine(rend, 0, anchor, WINWIDTH, anchor);
-	if (global->curbuf==-1) {
-		drawText(rend, "No buffers open.", font, 0, anchor+1);
+	if (global->curbuf == -1) {
+		drawText(rend, "No buffers open.", font, 0, anchor + 1);
 		return;
 	}
 
 	int ix = 0;
 	buffer *buf = global->buffers->data[global->curbuf];
-	drawText(rend, buf->name->String, font, ix, anchor+1);
-	ix += (buf->name->len+1)*LETWIDTH;
-	drawText(rend, "(", font, ix, anchor+1);
-	ix+=LETWIDTH;
-	drawText(rend, stat_size, font, ix, anchor+1);
-	ix += (stat_size_len)*LETWIDTH;
-	drawText(rend, ")", font, ix, anchor+1);
-	ix+= LETWIDTH*2;
-	drawText(rend, "Zoom: ", font, ix, anchor+1);
-	ix += 6*LETWIDTH;
-	drawText(rend, stat_zoom, font, ix, anchor+1);
-	drawText(rend, stat_xy, font, WINWIDTH-(stat_xy_len*LETWIDTH), anchor+1);
+	drawText(rend, buf->name->String, font, ix, anchor + 1);
+	ix += (buf->name->len + 1) * LETWIDTH;
+	drawText(rend, "(", font, ix, anchor + 1);
+	ix += LETWIDTH;
+	drawText(rend, stat_size, font, ix, anchor + 1);
+	ix += (stat_size_len) * LETWIDTH;
+	drawText(rend, ")", font, ix, anchor + 1);
+	ix += LETWIDTH * 2;
+	drawText(rend, "Zoom: ", font, ix, anchor + 1);
+	ix += 6 * LETWIDTH;
+	drawText(rend, stat_zoom, font, ix, anchor + 1);
+	drawText(rend, stat_xy, font, WINWIDTH - (stat_xy_len * LETWIDTH), anchor + 1);
 }
 
-SDL_Rect drawArea = {LEFTBARWIDTH, TOPBARHEIGHT, 0, 0};
-SDL_Rect sprArea = {0, 0, 0, 0};
+SDL_Rect drawArea = { LEFTBARWIDTH, TOPBARHEIGHT, 0, 0 };
+SDL_Rect sprArea = { 0, 0, 0, 0 };
+
 SDL_Texture *curtext;
 
-void drawBuffer(SDL_Renderer* rend, limonada *global) {
+void drawBuffer(SDL_Renderer * rend, limonada * global)
+{
 	buffer *buf = global->buffers->data[global->curbuf];
-	if (buf->data!=NULL && buf->changedp) {
+	if (buf->data != NULL && buf->changedp) {
 		buf->changedp = 0;
 		curtext = textureFromBuffer(buf, rend);
 		stat_size_len = snprintf(stat_size, BUFSIZE, "%i,%i", buf->sizex, buf->sizey);
 	}
-	int sizex = (buf->sizex-buf->panx)*buf->zoom;
-	int sizey = (buf->sizey-buf->pany)*buf->zoom;
+	int sizex = (buf->sizex - buf->panx) * buf->zoom;
+	int sizey = (buf->sizey - buf->pany) * buf->zoom;
 	sprArea.x = buf->panx;
 	sprArea.y = buf->pany;
 	int boundaryX = 0;
@@ -431,39 +461,44 @@ void drawBuffer(SDL_Renderer* rend, limonada *global) {
 	if (sizey == DRAWAREAHEIGHT) {
 		drawArea.h = DRAWAREAHEIGHT;
 		sprArea.h = sizey;
-	} else if (sizey<DRAWAREAHEIGHT) {
+	} else if (sizey < DRAWAREAHEIGHT) {
 		sprArea.h = sizey;
 		drawArea.h = sizey;
 		boundaryY = sizey;
-	} else if (sizey>DRAWAREAHEIGHT) {
+	} else if (sizey > DRAWAREAHEIGHT) {
 		drawArea.h = DRAWAREAHEIGHT;
-		sprArea.h = DRAWAREAHEIGHT/buf->zoom;
+		sprArea.h = DRAWAREAHEIGHT / buf->zoom;
 	}
 	if (sizex == DRAWAREAWIDTH) {
 		drawArea.w = DRAWAREAWIDTH;
 		sprArea.w = sizex;
-	} else if (sizex<DRAWAREAWIDTH) {
+	} else if (sizex < DRAWAREAWIDTH) {
 		sprArea.w = sizex;
 		drawArea.w = sizex;
 		boundaryX = sizex;
-	} else if (sizex>DRAWAREAWIDTH) {
+	} else if (sizex > DRAWAREAWIDTH) {
 		drawArea.w = DRAWAREAWIDTH;
-		sprArea.w = DRAWAREAWIDTH/buf->zoom;
+		sprArea.w = DRAWAREAWIDTH / buf->zoom;
 	}
 	SDL_RenderCopy(rend, curtext, &sprArea, &drawArea);
 	if (boundaryY > 0) {
 		if (boundaryX > 0) {
-			SDL_RenderDrawLine(rend, drawArea.x, boundaryY+drawArea.y, boundaryX+drawArea.x, boundaryY+drawArea.y);
-			SDL_RenderDrawLine(rend, boundaryX+drawArea.x, drawArea.y, boundaryX+drawArea.x, boundaryY+drawArea.y);
+			SDL_RenderDrawLine(rend, drawArea.x, boundaryY + drawArea.y,
+					   boundaryX + drawArea.x, boundaryY + drawArea.y);
+			SDL_RenderDrawLine(rend, boundaryX + drawArea.x, drawArea.y,
+					   boundaryX + drawArea.x, boundaryY + drawArea.y);
 		} else {
-			SDL_RenderDrawLine(rend, drawArea.x, boundaryY+drawArea.y, WINWIDTH-RIGHTBARWIDTH, boundaryY+drawArea.y);
+			SDL_RenderDrawLine(rend, drawArea.x, boundaryY + drawArea.y,
+					   WINWIDTH - RIGHTBARWIDTH, boundaryY + drawArea.y);
 		}
 	} else if (boundaryX > 0) {
-		SDL_RenderDrawLine(rend, boundaryX+drawArea.x, drawArea.y, boundaryX+drawArea.x, WINHEIGHT-BOTBARHEIGHT);
+		SDL_RenderDrawLine(rend, boundaryX + drawArea.x, drawArea.y, boundaryX + drawArea.x,
+				   WINHEIGHT - BOTBARHEIGHT);
 	}
 }
 
-SDL_Texture* loadXpm(SDL_Renderer *rend, char **data) {
+SDL_Texture *loadXpm(SDL_Renderer * rend, char **data)
+{
 	SDL_Surface *font;
 	font = IMG_ReadXPMFromArray(data);
 	if (!font) {
@@ -477,46 +512,51 @@ SDL_Texture* loadXpm(SDL_Renderer *rend, char **data) {
 	return ret;
 }
 
-SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar *m, int mx, int my, Uint8 button) {
+SDL_bool click(SDL_Renderer * rend, SDL_Texture * font, limonada * global, menubar * m, int mx,
+	       int my, Uint8 button)
+{
 	if (my <= LETHEIGHT + 2) {
-		// Clicked on the menubar
-		int ix=0;
-		int ox=0;
-		for (int i = 0; i<m->ntitles; i++) {
+		/* Clicked on the menubar */
+		int ix = 0;
+		int ox = 0;
+		for (int i = 0; i < m->ntitles; i++) {
 			ox = ix;
-			ix += (m->titles[i]->len+1)*LETWIDTH;
-			if (mx >=ox && mx < ix) {
-				if (i==m->vis) m->vis=-1;
-				else m->vis=i;
+			ix += (m->titles[i]->len + 1) * LETWIDTH;
+			if (mx >= ox && mx < ix) {
+				if (i == m->vis)
+					m->vis = -1;
+				else
+					m->vis = i;
 				return SDL_TRUE;
 			}
 		}
 	} else if (m->vis != -1) {
-		// A submenu is visible
-		int smw = (m->submenus[m->vis]->width*LETWIDTH)+4;
+		/* A submenu is visible */
+		int smw = (m->submenus[m->vis]->width * LETWIDTH) + 4;
 		int ox = 0;
-		for (int i = 0; i<m->vis; i++) ox+=(m->titles[i]->len+1)*LETWIDTH;
+		for (int i = 0; i < m->vis; i++)
+			ox += (m->titles[i]->len + 1) * LETWIDTH;
 
-		if (ox <= mx && mx <= ox+smw) {
-			int iy = LETHEIGHT+3;
+		if (ox <= mx && mx <= ox + smw) {
+			int iy = LETHEIGHT + 3;
 			int oy = 0;
-			for(int j=0; j<m->submenus[m->vis]->nentries; j++) {
+			for (int j = 0; j < m->submenus[m->vis]->nentries; j++) {
 				oy = iy;
 				iy += LETHEIGHT;
-				if (oy <= my && my <= iy){
-					// Calling will be done in release mouse
+				if (oy <= my && my <= iy) {
+					/* Calling will be done in release mouse */
 					return SDL_TRUE;
 				}
 			}
 		}
-	} else if (my <= (2*LETHEIGHT)+4) {
-		// Clicked on the tab bar
+	} else if (my <= (2 * LETHEIGHT) + 4) {
+		/* Clicked on the tab bar */
 		int ix = 0;
 		int ox = 0;
-		for (int i=0; i<global->buffers->len; i++) {
+		for (int i = 0; i < global->buffers->len; i++) {
 			ox = ix;
-			ix += (global->buffers->data[i]->name->len+1)*LETWIDTH+2;
-			if (mx >=ox && mx < ix) {
+			ix += (global->buffers->data[i]->name->len + 1)*LETWIDTH + 2;
+			if (mx >= ox && mx < ix) {
 				if (button == SDL_BUTTON_MIDDLE) {
 					killBufferInList(global->buffers, i);
 					if (global->buffers->len == 0) {
@@ -529,63 +569,65 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 					global->curbuf = global->buffers->len - 1;
 				}
 				if (global->curbuf != -1) {
-					global->buffers->data[global->curbuf]->changedp=1;
+					global->buffers->data[global->curbuf]->changedp = 1;
 				}
 				return SDL_TRUE;
 			}
 		}
-	} else if (global->curbuf!=-1 && mx<LEFTBARWIDTH && TOPBARHEIGHT<my) {
-		if (my<TOPBARHEIGHT+(5*TOOLSIZE)) {
-			// Clicked on the toolbar
-			int seltool = ((my-TOPBARHEIGHT)/TOOLSIZE)*2;
-			if (mx>TOOLSIZE) {
+	} else if (global->curbuf != -1 && mx < LEFTBARWIDTH && TOPBARHEIGHT < my) {
+		if (my < TOPBARHEIGHT + (5 * TOOLSIZE)) {
+			/* Clicked on the toolbar */
+			int seltool = ((my - TOPBARHEIGHT) / TOOLSIZE) * 2;
+			if (mx > TOOLSIZE) {
 				seltool |= 1;
 			}
 			global->buffers->data[global->curbuf]->tool = seltool;
-		} else if (my < secondaryRect.y+secondaryRect.h && global->curbuf != -1) {
-			// Clicked on the 1ary and 2ary colors
+		} else if (my < secondaryRect.y + secondaryRect.h && global->curbuf != -1) {
+			/* Clicked on the 1ary and 2ary colors */
 			GETCURBUF;
 			SDL_Color temp = buf->primary;
 			buf->primary = buf->secondary;
 			buf->secondary = temp;
 		}
-	} else if (WINWIDTH-RIGHTBARWIDTH<mx && mx<WINWIDTH-SCROLLBARWIDTH &&
-		   TOPBARHEIGHT<my) {
-		// clicked on the palette
+	} else if (WINWIDTH - RIGHTBARWIDTH < mx && mx < WINWIDTH - SCROLLBARWIDTH &&
+		   TOPBARHEIGHT < my) {
+		/* clicked on the palette */
 		if (global->curbuf != -1) {
 			GETCURBUF;
-			if (my<TOPBARHEIGHT+(COLORSIZE*(buf->pal->len-buf->pal->scroll))) {
-				int selcol = buf->pal->scroll+((my-TOPBARHEIGHT)/COLORSIZE);
+			if (my < TOPBARHEIGHT + (COLORSIZE * (buf->pal->len - buf->pal->scroll))) {
+				int selcol = buf->pal->scroll + ((my - TOPBARHEIGHT) / COLORSIZE);
 				if (button == SDL_BUTTON_LEFT) {
 					buf->primary = buf->pal->colors[selcol];
 				} else if (button == SDL_BUTTON_RIGHT) {
 					buf->secondary = buf->pal->colors[selcol];
 				}
-			} else if (my<TOPBARHEIGHT+((COLORSIZE)*(buf->pal->len-buf->pal->scroll+1))) {
-				SDL_Color col = {0xFF, 0xFF, 0xFF, 0xFF};
-				if(button == SDL_BUTTON_LEFT) {
-					if(pickColorHSV(rend, font, &col))
+			} else if (my <
+				   TOPBARHEIGHT +
+				   ((COLORSIZE) * (buf->pal->len - buf->pal->scroll + 1))) {
+				SDL_Color col = { 0xFF, 0xFF, 0xFF, 0xFF };
+				if (button == SDL_BUTTON_LEFT) {
+					if (pickColorHSV(rend, font, &col))
 						addColorToPalette(buf->pal, col);
-				} else if (button == SDL_BUTTON_RIGHT){
-					if(pickColor(rend, font, &col))
+				} else if (button == SDL_BUTTON_RIGHT) {
+					if (pickColor(rend, font, &col))
 						addColorToPalette(buf->pal, col);
 				}
 			}
 		}
 	} else if (global->curbuf != -1) {
-		// clicked on the paint area
+		/* clicked on the paint area */
 		GETCURBUF;
 		UPDATEPXPY;
-		if (0<=px && px<buf->sizex && 0<=py && py<buf->sizey) {
+		if (0 <= px && px < buf->sizex && 0 <= py && py < buf->sizey) {
 			SDL_Color color;
 			if (button == SDL_BUTTON_LEFT) {
 				color = buf->primary;
 			} else {
 				color = buf->secondary;
 			}
-			switch(buf->tool) {
+			switch (buf->tool) {
 			case TOOL_PENCIL:
-				if (button==SDL_BUTTON_LEFT||button==SDL_BUTTON_RIGHT) {
+				if (button == SDL_BUTTON_LEFT || button == SDL_BUTTON_RIGHT) {
 					bufferStartUndo(buf);
 					bufferPencil(buf, px, py, color);
 				}
@@ -600,7 +642,7 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 				}
 				break;
 			case TOOL_LINE:
-				if (button==SDL_BUTTON_LEFT||button==SDL_BUTTON_RIGHT) {
+				if (button == SDL_BUTTON_LEFT || button == SDL_BUTTON_RIGHT) {
 					linepx = px;
 					linepy = py;
 					linec = color;
@@ -608,82 +650,86 @@ SDL_bool click(SDL_Renderer *rend, SDL_Texture *font, limonada *global, menubar 
 			}
 		}
 	}
-	m->vis=-1;
+	m->vis = -1;
 	return SDL_TRUE;
 }
 
-void scroll(buffer *buf, SDL_Event event, int mx, int my) {
+void scroll(buffer * buf, SDL_Event event, int mx, int my)
+{
 	if (event.wheel.y > 0) {
-		// scroll up
-		if (mx>(WINWIDTH-RIGHTBARWIDTH)) {
-			if (buf->pal->scroll>0)
+		/* scroll up */
+		if (mx > (WINWIDTH - RIGHTBARWIDTH)) {
+			if (buf->pal->scroll > 0)
 				buf->pal->scroll--;
 			UPDATEPXPY;
 			return;
 		}
 		if (CTRL_DOWN) {
 			if (buf->zoom < 512)
-				buf->zoom*=2;
+				buf->zoom *= 2;
 		} else if (SHIFT_DOWN) {
 			buf->panx--;
-			if (buf->panx<0) {
-				buf->panx=0;
+			if (buf->panx < 0) {
+				buf->panx = 0;
 			}
 		} else {
 			buf->pany--;
-			if (buf->pany<0) {
-				buf->pany=0;
+			if (buf->pany < 0) {
+				buf->pany = 0;
 			}
 		}
 	} else if (event.wheel.y < 0) {
-		// scroll down
-		if (mx>(WINWIDTH-RIGHTBARWIDTH)) {
-			if (buf->pal->scroll < buf->pal->len-2)
+		/* scroll down */
+		if (mx > (WINWIDTH - RIGHTBARWIDTH)) {
+			if (buf->pal->scroll < buf->pal->len - 2)
 				buf->pal->scroll++;
 			UPDATEPXPY;
 			return;
 		}
 		if (CTRL_DOWN) {
-			buf->zoom/=2;
+			buf->zoom /= 2;
 			if (buf->zoom <= 0) {
 				buf->zoom = 1;
 			}
 		} else if (SHIFT_DOWN) {
 			buf->panx++;
 			if (buf->panx > buf->sizex) {
-				buf->panx=buf->sizex;
+				buf->panx = buf->sizex;
 			}
 		} else {
 			buf->pany++;
 			if (buf->pany > buf->sizey) {
-				buf->pany=buf->sizey;
+				buf->pany = buf->sizey;
 			}
 		}
 	}
 	UPDATEPXPY;
 }
 
-void usage(char *argv0) {
+void usage(char *argv0)
+{
 	fprintf(stderr, "usage: %s [files...]\n", argv0);
 	exit(1);
 }
 
-int main(int argc, char *argv[]) {
-	// parse args
+int main(int argc, char *argv[])
+{
+	/* parse args */
 	char *argv0 = argv[0];
 	ARGBEGIN {
-		case 'h':
-		default:
-			usage(argv0);
-	} ARGEND;
+case 'h':
+default:
+		usage(argv0);
+	}
+	ARGEND;
 
-	#ifndef NO_GTK
+#ifndef NO_GTK
 	gtk_init(&argc, &argv);
-	#endif
+#endif
 
-	// initialise state
+	/* initialise state */
 	limonada *global;
-	if (argc>0) {
+	if (argc > 0) {
 		buflist *buffers = makeBuflistFromArgs(argc, argv);
 		global = makeState(buffers);
 	} else {
@@ -691,55 +737,54 @@ int main(int argc, char *argv[]) {
 		global = makeState(buffers);
 	}
 
-	// init sdl
+	/* init sdl */
 	SDL_Init(SDL_INIT_EVERYTHING);
 
-	// get the window
+	/* get the window */
 	SDL_Window *window = SDL_CreateWindow(TITLE, SDL_WINDOWPOS_UNDEFINED,
-		SDL_WINDOWPOS_UNDEFINED, WINWIDTH, WINHEIGHT, SDL_WINDOW_SHOWN
-		|SDL_WINDOW_RESIZABLE);
+					      SDL_WINDOWPOS_UNDEFINED, WINWIDTH, WINHEIGHT,
+					      SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	if (!window) {
 		fprintf(stderr, "main: %s\n", SDL_GetError());
 		return 1;
 	}
-
-	// get the renderer
+	/* get the renderer */
 	SDL_Renderer *rend = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 	SDL_SetRenderDrawBlendMode(rend, SDL_BLENDMODE_BLEND);
 
-	// load the font and icon
+	/* load the font and icon */
 	SDL_Texture *font = loadXpm(rend, cp437);
 	SDL_Texture *tool = loadXpm(rend, tools);
 	SDL_Surface *icons = IMG_ReadXPMFromArray(icon);
 	SDL_SetWindowIcon(window, icons);
 
-	// Initialise the interface
+	/* Initialise the interface */
 	int mx, my;
 	mx = -1;
 	my = -1;
-	char *titles[] = {"File","Edit","Help"};
+	char *titles[] = { "File", "Edit", "Help" };
 	menubar *m = makeMenuBar(titles, 3);
-	char *fileentries[] = {"Open", "Import", "Save", "Export", "Quit"};
+	char *fileentries[] = { "Open", "Import", "Save", "Export", "Quit" };
 	m->submenus[0] = makeSubmenu(fileentries, 5);
 	m->submenus[0]->callbacks[0] = *actionOpen;
 	m->submenus[0]->callbacks[2] = *actionSave;
 	m->submenus[0]->callbacks[4] = *actionQuit;
-	char *editentries[] = {"Undo", "Redo", "Copy", "Paste"};
+	char *editentries[] = { "Undo", "Redo", "Copy", "Paste" };
 	m->submenus[1] = makeSubmenu(editentries, 4);
 	m->submenus[1]->callbacks[0] = *actionUndo;
 	m->submenus[1]->callbacks[1] = *actionRedo;
-	char *helpentries[] = {"On-Line Help", "About..."};
+	char *helpentries[] = { "On-Line Help", "About..." };
 	m->submenus[2] = makeSubmenu(helpentries, 2);
-	SDL_Rect paintArea = {LEFTBARWIDTH, TOPBARHEIGHT, DRAWAREAWIDTH, DRAWAREAHEIGHT};
+	SDL_Rect paintArea = { LEFTBARWIDTH, TOPBARHEIGHT, DRAWAREAWIDTH, DRAWAREAHEIGHT };
 	keyboardState = SDL_GetKeyboardState(NULL);
 
-	// main loop
+	/* main loop */
 	SDL_bool running = SDL_TRUE;
 	while (running) {
-		// update variables
+		/* update variables */
 		SDL_GetRendererOutputSize(rend, &WINWIDTH, &WINHEIGHT);
 		SDL_GetMouseState(&mx, &my);
-		// draw the window
+		/* draw the window */
 		BGCOL;
 		SDL_RenderClear(rend);
 		GREYCOL;
@@ -747,12 +792,12 @@ int main(int argc, char *argv[]) {
 		FGCOL;
 		if (global->curbuf != -1) {
 			drawBuffer(rend, global);
-			if (linepx!=-1 && linepy !=-1) {
+			if (linepx != -1 && linepy != -1) {
 				GETCURBUF;
 				UPDATEPXPY;
 				SDL_SetRenderDrawColor(rend, UNWRAP_COL(linec));
-				SDL_RenderDrawLine(rend, (linepx*buf->zoom)+LEFTBARWIDTH,
-						   (linepy*buf->zoom)+TOPBARHEIGHT, mx, my);
+				SDL_RenderDrawLine(rend, (linepx * buf->zoom) + LEFTBARWIDTH,
+						   (linepy * buf->zoom) + TOPBARHEIGHT, mx, my);
 				FGCOL;
 			}
 		}
@@ -763,7 +808,7 @@ int main(int argc, char *argv[]) {
 		drawMenuBar(m, rend, font, mx, my);
 		SDL_RenderPresent(rend);
 
-		// poll for events
+		/* poll for events */
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
@@ -774,13 +819,13 @@ int main(int argc, char *argv[]) {
 			case SDL_KEYDOWN:
 				switch (event.key.keysym.sym) {
 				case SDLK_z:
-					if (CTRL_DOWN&&global->curbuf!=-1) {
+					if (CTRL_DOWN && global->curbuf != -1) {
 						GETCURBUF;
 						bufferDoUndo(buf);
 					}
 					break;
 				case SDLK_y:
-					if (CTRL_DOWN&&global->curbuf!=-1) {
+					if (CTRL_DOWN && global->curbuf != -1) {
 						GETCURBUF;
 						bufferDoRedo(buf);
 					}
@@ -805,34 +850,41 @@ int main(int argc, char *argv[]) {
 				mx = event.button.x;
 				my = event.button.y;
 				if (m->vis != -1) {
-					// A submenu is visible
-					int smw = (m->submenus[m->vis]->width*LETWIDTH)+4;
+					/* A submenu is visible */
+					int smw = (m->submenus[m->vis]->width * LETWIDTH) + 4;
 					int ox = 0;
-					for (int i = 0; i<m->vis; i++) ox+=(m->titles[i]->len+1)*LETWIDTH;
+					for (int i = 0; i < m->vis; i++)
+						ox += (m->titles[i]->len + 1) * LETWIDTH;
 
-					if (ox <= mx && mx <= ox+smw) {
-						int iy = LETHEIGHT+3;
+					if (ox <= mx && mx <= ox + smw) {
+						int iy = LETHEIGHT + 3;
 						int oy = 0;
-						for(int j=0; j<m->submenus[m->vis]->nentries; j++) {
+						for (int j = 0; j < m->submenus[m->vis]->nentries;
+						     j++) {
 							oy = iy;
 							iy += LETHEIGHT;
 							if (oy <= my && my <= iy) {
-								if (m->submenus[m->vis]->callbacks[j]!=NULL) {
+								if (m->submenus[m->vis]->
+								    callbacks[j] != NULL) {
 									int sel = m->vis;
-									m->vis=-1;
-									running = (*m->submenus[sel]->callbacks[j])(rend, font, global);
+									m->vis = -1;
+									running =
+									    (*m->submenus
+									     [sel]->callbacks[j])
+									    (rend, font, global);
 									break;
 								}
-								m->vis=-1;
+								m->vis = -1;
 								break;
 							}
 						}
 					}
 				} else if (global->curbuf != -1) {
 					GETCURBUF;
-					switch(buf->tool) {
+					switch (buf->tool) {
 					case TOOL_PENCIL:
-						if (buf->undoList != NULL && buf->undoList->type!=EndUndo) {
+						if (buf->undoList != NULL
+						    && buf->undoList->type != EndUndo) {
 							bufferEndUndo(buf);
 						}
 						break;
@@ -842,11 +894,16 @@ int main(int argc, char *argv[]) {
 							bufferStartUndo(buf);
 							int epx = px;
 							int epy = py;
-							if (epx>buf->sizex) epx = buf->sizex-1;
-							else if (epx<0) epx = 0;
-							if (epy>buf->sizey) epy = buf->sizey-1;
-							else if (epy<0) epy = 0;
-							bufferDrawLine(buf, linec, linepx, linepy, epx, epy);
+							if (epx > buf->sizex)
+								epx = buf->sizex - 1;
+							else if (epx < 0)
+								epx = 0;
+							if (epy > buf->sizey)
+								epy = buf->sizey - 1;
+							else if (epy < 0)
+								epy = 0;
+							bufferDrawLine(buf, linec, linepx, linepy,
+								       epx, epy);
 							bufferEndUndo(buf);
 							linepx = linepy = -1;
 						}
@@ -860,8 +917,8 @@ int main(int argc, char *argv[]) {
 				my = event.motion.y;
 				if (m->vis == -1 && global->curbuf != -1) {
 					GETCURBUF;
-					if (event.motion.state&SDL_BUTTON_MMASK) {
-						// If middle button, pan the image
+					if (event.motion.state & SDL_BUTTON_MMASK) {
+						/* If middle button, pan the image */
 						buf->panx -= event.motion.xrel;
 						buf->pany -= event.motion.yrel;
 						if (buf->panx > buf->sizex) {
@@ -876,17 +933,20 @@ int main(int argc, char *argv[]) {
 						}
 					}
 					UPDATEPXPY;
-					if ((event.motion.state&SDL_BUTTON_RMASK||event.motion.state&SDL_BUTTON_LMASK) &&
-					    LEFTBARWIDTH<mx && mx < WINWIDTH-RIGHTBARWIDTH && TOPBARHEIGHT < my && my < WINHEIGHT-BOTBARHEIGHT &&
-					    0<=px && px<buf->sizex && 0<=py && py<buf->sizey) {
-						// dragging for tools
+					if ((event.motion.state & SDL_BUTTON_RMASK
+					     || event.motion.state & SDL_BUTTON_LMASK)
+					    && LEFTBARWIDTH < mx && mx < WINWIDTH - RIGHTBARWIDTH
+					    && TOPBARHEIGHT < my && my < WINHEIGHT - BOTBARHEIGHT
+					    && 0 <= px && px < buf->sizex && 0 <= py
+					    && py < buf->sizey) {
+						/* dragging for tools */
 						SDL_Color color;
-						if (event.motion.state&SDL_BUTTON_LMASK) {
+						if (event.motion.state & SDL_BUTTON_LMASK) {
 							color = buf->primary;
 						} else {
 							color = buf->secondary;
 						}
-						switch(buf->tool) {
+						switch (buf->tool) {
 						case TOOL_PENCIL:
 							bufferSetPixel(buf, px, py, color);
 							break;
@@ -896,14 +956,14 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case SDL_WINDOWEVENT:
-				paintArea.w=DRAWAREAWIDTH;
-				paintArea.h=DRAWAREAHEIGHT;
+				paintArea.w = DRAWAREAWIDTH;
+				paintArea.h = DRAWAREAHEIGHT;
 				break;
 			}
 		}
 	}
 
-	// Cleanup and quit back to DOS ;)
+	/* Cleanup and quit back to DOS ;) */
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 }

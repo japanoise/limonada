@@ -62,33 +62,33 @@ typedef struct {
 
 palette *defaultPalette();
 
-void addColorToPalette(palette *pal, SDL_Color color);
+void addColorToPalette(palette * pal, SDL_Color color);
 
 buffer *makeBuffer(char *name);
 
 buffer *makeBufferFromFile(char *filename);
 
-void setBufferFileName(char *filename, buffer *buf);
+void setBufferFileName(char *filename, buffer * buf);
 
-void killBuffer(buffer *buf);
+void killBuffer(buffer * buf);
 
-SDL_Texture *textureFromBuffer(buffer* buf, SDL_Renderer *rend);
+SDL_Texture *textureFromBuffer(buffer * buf, SDL_Renderer * rend);
 
-void bufferSetPixel(buffer *buf, int px, int py, SDL_Color color);
+void bufferSetPixel(buffer * buf, int px, int py, SDL_Color color);
 
-void bufferDrawLine(buffer *buf, SDL_Color color, int x0, int y0, int x1, int y1);
+void bufferDrawLine(buffer * buf, SDL_Color color, int x0, int y0, int x1, int y1);
 
-void bufferPencil(buffer *buf, int px, int py, SDL_Color color);
+void bufferPencil(buffer * buf, int px, int py, SDL_Color color);
 
-int bufferIsDirty(buffer *buf);
+int bufferIsDirty(buffer * buf);
 
-void bufferStartUndo(buffer *buf);
+void bufferStartUndo(buffer * buf);
 
-void bufferEndUndo(buffer *buf);
+void bufferEndUndo(buffer * buf);
 
-void bufferDoUndo(buffer *buf);
+void bufferDoUndo(buffer * buf);
 
-void bufferDoRedo(buffer *buf);
+void bufferDoRedo(buffer * buf);
 
-SDL_Color bufferGetColorAt(buffer *buf, int x, int y);
+SDL_Color bufferGetColorAt(buffer * buf, int x, int y);
 #endif

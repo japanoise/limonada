@@ -10,6 +10,6 @@ typedef struct {
 
 StrSlice *MakeSlice(char *str);
 
-void DestroySlice(StrSlice *s);
+void DestroySlice(StrSlice * s);
 
 #endif

@@ -3,7 +3,8 @@
 #include <shlwapi.h>
 #include <stdio.h>
 
-char *basename(char *path) {
+char *basename(char *path)
+{
 	int l = strlen(path);
 	char *fn = malloc(l);
 	char *ext = malloc(l);
@@ -13,7 +14,8 @@ char *basename(char *path) {
 	return fn;
 }
 
-int fexist(char *path) {
+int fexist(char *path)
+{
 	FILE *f = fopen(path, "r");
 	if (f) {
 		fclose(f);
@@ -26,7 +28,8 @@ int fexist(char *path) {
 #include <libgen.h>
 #include <unistd.h>
 
-int fexist(char *path) {
-	return access( path, F_OK ) != -1;
+int fexist(char *path)
+{
+	return access(path, F_OK) != -1;
 }
 #endif

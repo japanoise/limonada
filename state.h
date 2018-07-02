@@ -18,8 +18,8 @@ buflist *makeBuflist();
 
 buflist *makeBuflistFromArgs(int argc, char *argv[]);
 
-int appendBuffer(buflist *list, buffer *buf);
+int appendBuffer(buflist * list, buffer * buf);
 
-void killBufferInList(buflist *list, int which);
+void killBufferInList(buflist * list, int which);
 
-limonada *makeState(buflist *list);
+limonada *makeState(buflist * list);

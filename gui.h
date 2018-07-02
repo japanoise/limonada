@@ -22,9 +22,9 @@
 #define XRECT(rect) SDL_RenderDrawLine(rend, (rect).x, (rect).y, ((rect).x+(rect).w)-1, ((rect).y+(rect).h)-1); SDL_RenderDrawLine(rend, (rect).x, ((rect).y+(rect).h)-1, ((rect).x+(rect).w)-1, (rect).y)
 #define INSIDE_RECT(rect, mx, my) ((rect).x<mx&&mx<(rect).x+(rect).w && (rect).y<my&&my<(rect).y+(rect).h)
 
-void drawText(SDL_Renderer *rend, char *text, SDL_Texture *font, int x, int y);
+void drawText(SDL_Renderer * rend, char *text, SDL_Texture * font, int x, int y);
 
-enum fileFlags {fileFlag_NewFiles = 1};
+enum fileFlags { fileFlag_NewFiles = 1 };
 
-char *fileBrowse(SDL_Renderer *rend, SDL_Texture *font, char* dir, enum fileFlags flags);
+char *fileBrowse(SDL_Renderer * rend, SDL_Texture * font, char *dir, enum fileFlags flags);
 #endif
