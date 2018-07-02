@@ -868,8 +868,10 @@ default:
 							oy = iy;
 							iy += LETHEIGHT;
 							if (oy <= my && my <= iy) {
-								if (m->submenus[m->vis]->
-								    callbacks[j] != NULL) {
+								if (m->
+								    submenus[m->
+									     vis]->callbacks[j] !=
+								    NULL) {
 									int sel = m->vis;
 									m->vis = -1;
 									running =
