@@ -1,5 +1,5 @@
-CFLAGS=$(shell pkg-config --cflags gtk+-2.0 sdl2)
-LDFLAGS=$(shell pkg-config --libs gtk+-2.0 sdl2 sdl2_image) -lm
+CFLAGS=$(shell pkg-config --cflags gtk+-2.0) $(shell sdl2-config --cflags)
+LDFLAGS=$(shell pkg-config --libs gtk+-2.0) $(shell sdl2-config --libs) -lSDL2_image -lm
 PROGNAME=limonada
 
 all: $(PROGNAME)
