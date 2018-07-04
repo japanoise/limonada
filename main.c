@@ -653,6 +653,12 @@ SDL_bool click(SDL_Renderer * rend, SDL_Texture * font, limonada * global, menub
 					bufferDoFloodFill(buf, px, py, color);
 				}
 				break;
+			case TOOL_DITHER:
+				if (button == SDL_BUTTON_LEFT) {
+					bufferDoFloodFillDither(buf, px, py, buf->primary, buf->secondary);
+				} else if (button == SDL_BUTTON_RIGHT) {
+					bufferDoFloodFillDither(buf, px, py, buf->secondary, buf->primary);
+				}
 			}
 		}
 	}

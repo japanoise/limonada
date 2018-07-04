@@ -243,6 +243,9 @@ void bufferDrawLine(buffer * buf, SDL_Color color, int x0, int y0, int x1, int y
 	}
 }
 
+#define COLORSAME(index, col) (buf->data[index] == col.r && buf->data[index + 1] == col.g && buf->data[index + 2] == col.b && (buf->datachannels == STBI_rgb || buf->data[index + 3] == col.a))
+#define SDLCOLORSAME(cola, colb) (cola.r == colb.r&&cola.g == colb.g&&cola.b == colb.b&&cola.a == colb.a)
+
 void bufferFloodFill(buffer * buf, int px, int py, SDL_Color old, SDL_Color new)
 {
 	/* quit early if OOB */
@@ -250,9 +253,7 @@ void bufferFloodFill(buffer * buf, int px, int py, SDL_Color old, SDL_Color new)
 		return;
 	int index = GETINDEX(px, py);
 	/* If color same as old color */
-	if (buf->data[index] == old.r && buf->data[index + 1] == old.g
-	    && buf->data[index + 2] == old.b && (buf->datachannels == STBI_rgb
-						 || buf->data[index + 3] == old.a)) {
+	if (COLORSAME(index, old)) {
 		bufferSetPixel(buf, px, py, new);
 		bufferFloodFill(buf, px, py + 1, old, new);
 		bufferFloodFill(buf, px, py - 1, old, new);
@@ -263,9 +264,39 @@ void bufferFloodFill(buffer * buf, int px, int py, SDL_Color old, SDL_Color new)
 
 void bufferDoFloodFill(buffer * buf, int px, int py, SDL_Color new)
 {
+	int index = GETINDEX(px, py);
+	if (COLORSAME(index, new)) return;
+
 	bufferStartUndo(buf);
 	bufferFloodFill(buf, px, py, bufferGetColorAt(buf, px, py), new);
 	bufferEndUndo(buf);
+}
+
+void bufferDitherFill(buffer * buf, int px, int py, SDL_Color old, SDL_Color a, SDL_Color b)
+{
+	/* quit early if OOB */
+	if (px >= buf->sizex || px < 0 || py >= buf->sizey || py < 0)
+		return;
+	int index = GETINDEX(px, py);
+	/* If color same as old color */
+	if (COLORSAME(index, old)) {
+		bufferSetPixel(buf, px, py, a);
+		bufferDitherFill(buf, px, py + 1, old, b, a);
+		bufferDitherFill(buf, px, py - 1, old, b, a);
+		bufferDitherFill(buf, px + 1, py, old, b, a);
+		bufferDitherFill(buf, px - 1, py, old, b, a);
+	}
+}
+
+void bufferDoFloodFillDither(buffer * buf, int px, int py, SDL_Color a, SDL_Color b)
+{
+	if (SDLCOLORSAME(a,b)) {
+		bufferDoFloodFill(buf, px, py, a);
+	} else {
+		bufferStartUndo(buf);
+		bufferDitherFill(buf, px, py, bufferGetColorAt(buf, px, py), a, b);
+		bufferEndUndo(buf);
+	}
 }
 
 void bufferPencil(buffer * buf, int px, int py, SDL_Color color)
