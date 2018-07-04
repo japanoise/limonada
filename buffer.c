@@ -265,7 +265,8 @@ void bufferFloodFill(buffer * buf, int px, int py, SDL_Color old, SDL_Color new)
 void bufferDoFloodFill(buffer * buf, int px, int py, SDL_Color new)
 {
 	int index = GETINDEX(px, py);
-	if (COLORSAME(index, new)) return;
+	if (COLORSAME(index, new))
+		return;
 
 	bufferStartUndo(buf);
 	bufferFloodFill(buf, px, py, bufferGetColorAt(buf, px, py), new);
@@ -290,7 +291,7 @@ void bufferDitherFill(buffer * buf, int px, int py, SDL_Color old, SDL_Color a, 
 
 void bufferDoFloodFillDither(buffer * buf, int px, int py, SDL_Color a, SDL_Color b)
 {
-	if (SDLCOLORSAME(a,b)) {
+	if (SDLCOLORSAME(a, b)) {
 		bufferDoFloodFill(buf, px, py, a);
 	} else {
 		bufferStartUndo(buf);
@@ -345,8 +346,8 @@ void bufferDoUndo(buffer * buf)
 	do {
 		if (buf->undoList->type == PixelUndo) {
 			internal_bufferSetPixel(buf, buf->undoList->data.pixUndoData.index,
-						internal_unpackColor(buf->undoList->
-								     data.pixUndoData.oldColor));
+						internal_unpackColor(buf->undoList->data.
+								     pixUndoData.oldColor));
 		}
 		buf->undoList = buf->undoList->prev;
 	} while (buf->undoList->type != StartUndo);
@@ -359,8 +360,8 @@ void bufferDoRedo(buffer * buf)
 	do {
 		if (buf->undoList->type == PixelUndo) {
 			internal_bufferSetPixel(buf, buf->undoList->data.pixUndoData.index,
-						internal_unpackColor(buf->undoList->
-								     data.pixUndoData.newColor));
+						internal_unpackColor(buf->undoList->data.
+								     pixUndoData.newColor));
 		}
 		buf->undoList = buf->undoList->next;
 	} while (buf->undoList->type != EndUndo);

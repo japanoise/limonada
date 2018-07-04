@@ -655,9 +655,11 @@ SDL_bool click(SDL_Renderer * rend, SDL_Texture * font, limonada * global, menub
 				break;
 			case TOOL_DITHER:
 				if (button == SDL_BUTTON_LEFT) {
-					bufferDoFloodFillDither(buf, px, py, buf->primary, buf->secondary);
+					bufferDoFloodFillDither(buf, px, py, buf->primary,
+								buf->secondary);
 				} else if (button == SDL_BUTTON_RIGHT) {
-					bufferDoFloodFillDither(buf, px, py, buf->secondary, buf->primary);
+					bufferDoFloodFillDither(buf, px, py, buf->secondary,
+								buf->primary);
 				}
 			}
 		}
@@ -876,10 +878,8 @@ default:
 							oy = iy;
 							iy += LETHEIGHT;
 							if (oy <= my && my <= iy) {
-								if (m->
-								    submenus[m->
-									     vis]->callbacks[j] !=
-								    NULL) {
+								if (m->submenus[m->vis]->
+								    callbacks[j] != NULL) {
 									int sel = m->vis;
 									m->vis = -1;
 									running =
