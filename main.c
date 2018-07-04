@@ -38,6 +38,10 @@
 #define DRAWAREAHEIGHT (WINHEIGHT-TOPBARHEIGHT-BOTBARHEIGHT)
 #define DRAWAREAWIDTH (WINWIDTH-LEFTBARWIDTH-RIGHTBARWIDTH)
 
+SDL_Cursor *pointer;
+SDL_Cursor *panner;
+SDL_Cursor *toolCursors[10];
+
 #define TOOL_PENCIL 0
 #define TOOL_PICKER 1
 #define TOOL_FILL 2
@@ -720,6 +724,31 @@ void scroll(buffer * buf, SDL_Event event, int mx, int my)
 	UPDATEPXPY;
 }
 
+void setupCursors()
+{
+	/* Bog standard pointer cursor */
+	pointer = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+	panner = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
+
+	/* Use crosshairs as default */
+	toolCursors[0] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
+	for (int i = 1; i < 10; i++)
+		toolCursors[i] = toolCursors[0];
+
+	/* Just use a pointer for pencil */
+	toolCursors[TOOL_PENCIL] = pointer;
+
+	/* Panner-hack a pipette in hex because we hate efficiency at seekrit.club */
+	Uint8 pick[32] =
+	    { 0x40, 0x00, 0xB0, 0x00, 0x48, 0x00, 0x44, 0x00, 0x22, 0x00, 0x11, 0x00, 0x08, 0x80,
+       0x04, 0x50, 0x02, 0x38, 0x01, 0x7C, 0x00, 0xF8, 0x01, 0x1C, 0x00, 0xAE, 0x00, 0x57, 0x00,
+       0x0B, 0x00, 0x06 };
+	Uint8 pmask[32];
+	for (int i = 0; i < 32; i++)
+		pmask[i] = 0x00;
+	toolCursors[TOOL_PICKER] = SDL_CreateCursor(pick, pmask, 16, 16, 0, 0);
+}
+
 void usage(char *argv0)
 {
 	fprintf(stderr, "usage: %s [files...]\n", argv0);
@@ -791,6 +820,7 @@ default:
 	m->submenus[2] = makeSubmenu(helpentries, 2);
 	SDL_Rect paintArea = { LEFTBARWIDTH, TOPBARHEIGHT, DRAWAREAWIDTH, DRAWAREAHEIGHT };
 	keyboardState = SDL_GetKeyboardState(NULL);
+	setupCursors();
 
 	/* main loop */
 	SDL_bool running = SDL_TRUE;
@@ -878,8 +908,10 @@ default:
 							oy = iy;
 							iy += LETHEIGHT;
 							if (oy <= my && my <= iy) {
-								if (m->submenus[m->vis]->
-								    callbacks[j] != NULL) {
+								if (m->
+								    submenus[m->
+									     vis]->callbacks[j] !=
+								    NULL) {
 									int sel = m->vis;
 									m->vis = -1;
 									running =
@@ -895,6 +927,7 @@ default:
 					}
 				} else if (global->curbuf != -1) {
 					GETCURBUF;
+					SDL_SetCursor(toolCursors[buf->tool]);
 					switch (buf->tool) {
 					case TOOL_PENCIL:
 						if (buf->undoList != NULL
@@ -933,6 +966,7 @@ default:
 					GETCURBUF;
 					if (event.motion.state & SDL_BUTTON_MMASK) {
 						/* If middle button, pan the image */
+						SDL_SetCursor(panner);
 						buf->panx -= event.motion.xrel;
 						buf->pany -= event.motion.yrel;
 						if (buf->panx > buf->sizex) {
@@ -944,6 +978,15 @@ default:
 							buf->pany = buf->sizey;
 						} else if (buf->pany < 0) {
 							buf->pany = 0;
+						}
+					} else if (event.motion.state == 0) {
+						/* If nothing pressed, set the cursor */
+						if (mx < LEFTBARWIDTH || my < TOPBARHEIGHT
+						    || my > WINHEIGHT - BOTBARHEIGHT
+						    || mx > WINWIDTH - RIGHTBARWIDTH) {
+							SDL_SetCursor(pointer);
+						} else {
+							SDL_SetCursor(toolCursors[buf->tool]);
 						}
 					}
 					UPDATEPXPY;
