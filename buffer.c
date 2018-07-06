@@ -61,6 +61,7 @@ buffer *makeBuffer(char *name)
 	ret->data = NULL;
 	ret->changedp = 1;	/* Generate a new texture when ready */
 	ret->tool = 0;
+	ret->selcontext = 0;
 	ret->pal = defaultPalette();
 	ret->primary = (SDL_Color) {
 	0, 0, 0, 0xFF};
@@ -365,6 +366,28 @@ void bufferDoRedo(buffer * buf)
 		}
 		buf->undoList = buf->undoList->next;
 	} while (buf->undoList->type != EndUndo);
+}
+
+void bufferDoRectOutline(buffer *buf, int x1, int y1, int x2, int y2, SDL_Color color)
+{
+	/* West border */
+	bufferDrawLine(buf, color, x1, y1, x1, y2);
+	/* North border */
+	bufferDrawLine(buf, color, x1, y1, x2, y1);
+	/* East border */
+	bufferDrawLine(buf, color, x2, y1, x2, y2);
+	/* South border */
+	bufferDrawLine(buf, color, x1, y2, x2, y2);
+}
+
+void bufferDoRectFill(buffer *buf, int x1, int y1, int x2, int y2, SDL_Color color, SDL_Color border)
+{
+	for (int x = x1; x<=x2; x++) {
+		for (int y = y1; y<=y2; y++) {
+			bufferSetPixel(buf, x, y, color);
+		}
+	}
+	bufferDoRectOutline(buf, x1, y1, x2, y2, border);
 }
 
 SDL_Color bufferGetColorAt(buffer * buf, int x, int y)

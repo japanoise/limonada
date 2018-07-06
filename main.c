@@ -52,9 +52,18 @@ SDL_Cursor *toolCursors[10];
 #define TOOL_LINE 7
 #define TOOL_RECT 8
 #define TOOL_COLORTOCOLOR 9
+
+typedef struct {
+	int num;
+	char **entries;
+} toolcontext;
+
+toolcontext *contexts[10];
+
 int linepx = -1;
 int linepy = -1;
 SDL_Color linec;
+SDL_Color rectsecc;
 
 int WINWIDTH = 800;
 int WINHEIGHT = 600;
@@ -298,6 +307,8 @@ SDL_Rect primaryRect =
     { 0, TOPBARHEIGHT + (5 * TOOLSIZE) + LETHEIGHT, LEFTBARWIDTH - 1, COLORSIZE };
 SDL_Rect secondaryRect =
     { 0, TOPBARHEIGHT + (5 * TOOLSIZE) + (LETHEIGHT * 2) + COLORSIZE, LEFTBARWIDTH - 1, COLORSIZE };
+SDL_Rect contextRect = {0, 0, LEFTBARWIDTH - 1, LETHEIGHT+2};
+SDL_Rect selContextRect = {1, 0, LEFTBARWIDTH - 3, LETHEIGHT};
 
 void drawToolBar(SDL_Renderer * rend, SDL_Texture * font, SDL_Texture * tool, limonada * global,
 		 int mx, int my)
@@ -342,6 +353,25 @@ void drawToolBar(SDL_Renderer * rend, SDL_Texture * font, SDL_Texture * tool, li
 			GREYCOL;
 			SDL_RenderDrawRect(rend, &selToolRect);
 			FGCOL;
+		}
+
+		if (contexts[buf->tool]!=NULL) {
+			toolcontext *context = contexts[buf->tool];
+			int anchor = secondaryRect.y + (2*COLORSIZE);
+			for (int i = 0; i<context->num; i++) {
+				contextRect.y = anchor + i + (i*contextRect.h);
+				drawText(rend, context->entries[i], font, 1, contextRect.y+1);
+				SDL_RenderDrawRect(rend, &contextRect);
+				if(mx<LEFTBARWIDTH && contextRect.y < my && my < contextRect.y+contextRect.h) {
+					selContextRect.y = contextRect.y+1;
+					GREYCOL;
+					SDL_RenderDrawRect(rend, &selContextRect);
+					FGCOL;
+				} else if (buf->selcontext==i) {
+					selContextRect.y = contextRect.y+1;
+					SDL_RenderDrawRect(rend, &selContextRect);
+				}
+			}
 		}
 	}
 }
@@ -586,12 +616,26 @@ SDL_bool click(SDL_Renderer * rend, SDL_Texture * font, limonada * global, menub
 				seltool |= 1;
 			}
 			global->buffers->data[global->curbuf]->tool = seltool;
+			global->buffers->data[global->curbuf]->selcontext = 0;
 		} else if (my < secondaryRect.y + secondaryRect.h && global->curbuf != -1) {
 			/* Clicked on the 1ary and 2ary colors */
 			GETCURBUF;
 			SDL_Color temp = buf->primary;
 			buf->primary = buf->secondary;
 			buf->secondary = temp;
+		} else if (global->curbuf != -1) {
+			/* Clicked where the context menu lives */
+			GETCURBUF;
+			if(contexts[buf->tool] != NULL) {
+				toolcontext *context = contexts[buf->tool];
+				int anchor = secondaryRect.y + (COLORSIZE*2);
+				for (int i = 0; i<context->num; i++) {
+					contextRect.y = anchor + i + (i*contextRect.h);
+					if(mx<LEFTBARWIDTH && contextRect.y < my && my < contextRect.y+contextRect.h) {
+						buf->selcontext = i;
+					}
+				}
+			}
 		}
 	} else if (WINWIDTH - RIGHTBARWIDTH < mx && mx < WINWIDTH - SCROLLBARWIDTH &&
 		   TOPBARHEIGHT < my) {
@@ -643,6 +687,14 @@ SDL_bool click(SDL_Renderer * rend, SDL_Texture * font, limonada * global, menub
 					buf->secondary = bufferGetColorAt(buf, px, py);
 				} else {
 					addColorToPalette(buf->pal, bufferGetColorAt(buf, px, py));
+				}
+				break;
+			case TOOL_RECT:
+				if (button == SDL_BUTTON_LEFT || button == SDL_BUTTON_RIGHT) {
+					linepx = px;
+					linepy = py;
+					linec = color;
+					rectsecc = button==SDL_BUTTON_LEFT ? buf->secondary : buf->primary;
 				}
 				break;
 			case TOOL_LINE:
@@ -749,11 +801,47 @@ void setupCursors()
 	toolCursors[TOOL_PICKER] = SDL_CreateCursor(pick, pmask, 16, 16, 0, 0);
 }
 
+#define MAKE_CONTEXT(whichtool, numitems) contexts[whichtool] = malloc(sizeof(toolcontext));\
+	contexts[whichtool]->num = numitems;\
+	contexts[whichtool]->entries = malloc(numitems*sizeof(char*))
+
+void setupToolContexts()
+{
+	for (int i = 0; i<10; i++) {
+		contexts[i] = NULL;
+	}
+	MAKE_CONTEXT(TOOL_RECT, 2);
+	contexts[TOOL_RECT]->entries[0] = " [ ]";
+	contexts[TOOL_RECT]->entries[1] = " [\xfe]";
+	/* Here's to the old-school! http://dilldoe.org/images/Brush.jpg */
+	MAKE_CONTEXT(TOOL_PAINT, 6);
+	contexts[TOOL_PAINT]->entries[0] = " . 1";
+	contexts[TOOL_PAINT]->entries[1] = " \xfe 2";
+	contexts[TOOL_PAINT]->entries[2] = " \x07 4";
+	contexts[TOOL_PAINT]->entries[3] = " \xfe 5";
+	contexts[TOOL_PAINT]->entries[4] = " \x07 7";
+	contexts[TOOL_PAINT]->entries[5] = " \xfe 8";
+	MAKE_CONTEXT(TOOL_ERASE, 4);
+	contexts[TOOL_ERASE]->entries[0] = " \xfe 4";
+	contexts[TOOL_ERASE]->entries[1] = " \xfe 6";
+	contexts[TOOL_ERASE]->entries[2] = " \xfe 8";
+	contexts[TOOL_ERASE]->entries[3] = " \xfe""10";
+	/* http://dilldoe.org/images/Lines.jpg */
+	MAKE_CONTEXT(TOOL_LINE, 5);
+	contexts[TOOL_LINE]->entries[0] = " \xb3 1";
+	contexts[TOOL_LINE]->entries[1] = " \xb3 2";
+	contexts[TOOL_LINE]->entries[2] = " \xba 3";
+	contexts[TOOL_LINE]->entries[3] = " \xba 4";
+	contexts[TOOL_LINE]->entries[4] = " \xdb 5";
+}
+
 void usage(char *argv0)
 {
 	fprintf(stderr, "usage: %s [files...]\n", argv0);
 	exit(1);
 }
+
+SDL_Rect rectToolRect;
 
 int main(int argc, char *argv[])
 {
@@ -821,6 +909,7 @@ default:
 	SDL_Rect paintArea = { LEFTBARWIDTH, TOPBARHEIGHT, DRAWAREAWIDTH, DRAWAREAHEIGHT };
 	keyboardState = SDL_GetKeyboardState(NULL);
 	setupCursors();
+	setupToolContexts();
 
 	/* main loop */
 	SDL_bool running = SDL_TRUE;
@@ -840,8 +929,46 @@ default:
 				GETCURBUF;
 				UPDATEPXPY;
 				SDL_SetRenderDrawColor(rend, UNWRAP_COL(linec));
-				SDL_RenderDrawLine(rend, (linepx * buf->zoom) + LEFTBARWIDTH,
-						   (linepy * buf->zoom) + TOPBARHEIGHT, mx, my);
+				if (buf->tool == TOOL_LINE) {
+					SDL_RenderDrawLine(rend, (linepx * buf->zoom) + LEFTBARWIDTH,
+							   (linepy * buf->zoom) + TOPBARHEIGHT, mx, my);
+				} else if (buf->tool == TOOL_RECT) {
+					int rx, ry, rw, rh;
+					int mpx = (linepx * buf->zoom) + LEFTBARWIDTH;
+					int mpy = (linepy * buf->zoom) + TOPBARHEIGHT;
+					if (mx>=mpx) {
+						rx = mpx;
+						rw = mx-mpx;
+					} else {
+						rx = mx;
+						rw = mpx-mx;
+					}
+					if (my>=mpy) {
+						ry = mpy;
+						rh = my-mpy;
+					} else {
+						ry = my;
+						rh = mpy-my;
+					}
+					if (rx<LEFTBARWIDTH) {
+						rx = LEFTBARWIDTH;
+						rw = mpx-rx;
+					}
+					if (ry<TOPBARHEIGHT) {
+						ry = TOPBARHEIGHT;
+						rh = mpy-ry;
+					}
+					rectToolRect.x = rx;
+					rectToolRect.y = ry;
+					rectToolRect.w = rw;
+					rectToolRect.h = rh;
+					if (buf->selcontext == 1) {
+						SDL_SetRenderDrawColor(rend, UNWRAP_COL(rectsecc));
+						SDL_RenderFillRect(rend, &rectToolRect);
+						SDL_SetRenderDrawColor(rend, UNWRAP_COL(linec));
+					}
+					SDL_RenderDrawRect(rend, &rectToolRect);
+				}
 				FGCOL;
 			}
 		}
@@ -955,6 +1082,34 @@ default:
 							linepx = linepy = -1;
 						}
 						break;
+					case TOOL_RECT:
+						if (linepx != -1 && linepy != -1) {
+							UPDATEPXPY;
+							bufferStartUndo(buf);
+							int epx = px;
+							int epy = py;
+							if (epx > buf->sizex)
+								epx = buf->sizex - 1;
+							else if (epx < 0)
+								epx = 0;
+							if (epy > buf->sizey)
+								epy = buf->sizey - 1;
+							else if (epy < 0)
+								epy = 0;
+
+							int x1 = epx<linepx ? epx : linepx;
+							int x2 = epx>linepx ? epx : linepx;
+							int y1 = epy<linepy ? epy : linepy;
+							int y2 = epy>linepy ? epy : linepy;
+							if (buf->selcontext == 1) {
+								bufferDoRectFill(buf, x1, y1, x2, y2, rectsecc, linec);
+							} else {
+								bufferDoRectOutline(buf, x1, y1, x2, y2, linec);
+							}
+
+							bufferEndUndo(buf);
+							linepx = linepy = -1;
+						}
 					}
 				}
 				break;

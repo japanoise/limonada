@@ -53,6 +53,7 @@ typedef struct {
 	unsigned char *data;
 	char changedp;
 	char tool;
+	int selcontext;
 	SDL_Color primary;
 	SDL_Color secondary;
 	palette *pal;
@@ -93,6 +94,10 @@ void bufferDoRedo(buffer * buf);
 void bufferDoFloodFill(buffer * buf, int px, int py, SDL_Color new);
 
 void bufferDoFloodFillDither(buffer * buf, int px, int py, SDL_Color a, SDL_Color b);
+
+void bufferDoRectOutline(buffer *buf, int x1, int y1, int x2, int y2, SDL_Color color);
+
+void bufferDoRectFill(buffer *buf, int x1, int y1, int x2, int y2, SDL_Color color, SDL_Color border);
 
 SDL_Color bufferGetColorAt(buffer * buf, int x, int y);
 #endif
