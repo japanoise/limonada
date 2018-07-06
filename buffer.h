@@ -43,17 +43,17 @@ typedef struct undo undo;
 
 typedef struct {
 	StrSlice *name;
-	char *filename;
-	int zoom;
-	int panx;
-	int pany;
-	int sizex;
-	int sizey;
-	int datachannels;
+	unsigned char *filename;
+	unsigned int zoom;
+	unsigned int panx;
+	unsigned int pany;
+	unsigned int sizex;
+	unsigned int sizey;
+	unsigned int datachannels;
 	unsigned char *data;
-	char changedp;
-	char tool;
-	int selcontext;
+	unsigned char changedp;
+	unsigned char tool;
+	unsigned int selcontext;
 	SDL_Color primary;
 	SDL_Color secondary;
 	palette *pal;
