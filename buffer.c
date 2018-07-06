@@ -361,14 +361,14 @@ void bufferDoRedo(buffer * buf)
 	do {
 		if (buf->undoList->type == PixelUndo) {
 			internal_bufferSetPixel(buf, buf->undoList->data.pixUndoData.index,
-						internal_unpackColor(buf->undoList->data.
-								     pixUndoData.newColor));
+						internal_unpackColor(buf->undoList->
+								     data.pixUndoData.newColor));
 		}
 		buf->undoList = buf->undoList->next;
 	} while (buf->undoList->type != EndUndo);
 }
 
-void bufferDoRectOutline(buffer *buf, int x1, int y1, int x2, int y2, SDL_Color color)
+void bufferDoRectOutline(buffer * buf, int x1, int y1, int x2, int y2, SDL_Color color)
 {
 	/* West border */
 	bufferDrawLine(buf, color, x1, y1, x1, y2);
@@ -380,10 +380,11 @@ void bufferDoRectOutline(buffer *buf, int x1, int y1, int x2, int y2, SDL_Color 
 	bufferDrawLine(buf, color, x1, y2, x2, y2);
 }
 
-void bufferDoRectFill(buffer *buf, int x1, int y1, int x2, int y2, SDL_Color color, SDL_Color border)
+void bufferDoRectFill(buffer * buf, int x1, int y1, int x2, int y2, SDL_Color color,
+		      SDL_Color border)
 {
-	for (int x = x1; x<=x2; x++) {
-		for (int y = y1; y<=y2; y++) {
+	for (int x = x1; x <= x2; x++) {
+		for (int y = y1; y <= y2; y++) {
 			bufferSetPixel(buf, x, y, color);
 		}
 	}

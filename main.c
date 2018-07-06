@@ -307,8 +307,8 @@ SDL_Rect primaryRect =
     { 0, TOPBARHEIGHT + (5 * TOOLSIZE) + LETHEIGHT, LEFTBARWIDTH - 1, COLORSIZE };
 SDL_Rect secondaryRect =
     { 0, TOPBARHEIGHT + (5 * TOOLSIZE) + (LETHEIGHT * 2) + COLORSIZE, LEFTBARWIDTH - 1, COLORSIZE };
-SDL_Rect contextRect = {0, 0, LEFTBARWIDTH - 1, LETHEIGHT+2};
-SDL_Rect selContextRect = {1, 0, LEFTBARWIDTH - 3, LETHEIGHT};
+SDL_Rect contextRect = { 0, 0, LEFTBARWIDTH - 1, LETHEIGHT + 2 };
+SDL_Rect selContextRect = { 1, 0, LEFTBARWIDTH - 3, LETHEIGHT };
 
 void drawToolBar(SDL_Renderer * rend, SDL_Texture * font, SDL_Texture * tool, limonada * global,
 		 int mx, int my)
@@ -355,20 +355,21 @@ void drawToolBar(SDL_Renderer * rend, SDL_Texture * font, SDL_Texture * tool, li
 			FGCOL;
 		}
 
-		if (contexts[buf->tool]!=NULL) {
+		if (contexts[buf->tool] != NULL) {
 			toolcontext *context = contexts[buf->tool];
-			int anchor = secondaryRect.y + (2*COLORSIZE);
-			for (int i = 0; i<context->num; i++) {
-				contextRect.y = anchor + i + (i*contextRect.h);
-				drawText(rend, context->entries[i], font, 1, contextRect.y+1);
+			int anchor = secondaryRect.y + (2 * COLORSIZE);
+			for (int i = 0; i < context->num; i++) {
+				contextRect.y = anchor + i + (i * contextRect.h);
+				drawText(rend, context->entries[i], font, 1, contextRect.y + 1);
 				SDL_RenderDrawRect(rend, &contextRect);
-				if(mx<LEFTBARWIDTH && contextRect.y < my && my < contextRect.y+contextRect.h) {
-					selContextRect.y = contextRect.y+1;
+				if (mx < LEFTBARWIDTH && contextRect.y < my
+				    && my < contextRect.y + contextRect.h) {
+					selContextRect.y = contextRect.y + 1;
 					GREYCOL;
 					SDL_RenderDrawRect(rend, &selContextRect);
 					FGCOL;
-				} else if (buf->selcontext==i) {
-					selContextRect.y = contextRect.y+1;
+				} else if (buf->selcontext == i) {
+					selContextRect.y = contextRect.y + 1;
 					SDL_RenderDrawRect(rend, &selContextRect);
 				}
 			}
@@ -626,12 +627,13 @@ SDL_bool click(SDL_Renderer * rend, SDL_Texture * font, limonada * global, menub
 		} else if (global->curbuf != -1) {
 			/* Clicked where the context menu lives */
 			GETCURBUF;
-			if(contexts[buf->tool] != NULL) {
+			if (contexts[buf->tool] != NULL) {
 				toolcontext *context = contexts[buf->tool];
-				int anchor = secondaryRect.y + (COLORSIZE*2);
-				for (int i = 0; i<context->num; i++) {
-					contextRect.y = anchor + i + (i*contextRect.h);
-					if(mx<LEFTBARWIDTH && contextRect.y < my && my < contextRect.y+contextRect.h) {
+				int anchor = secondaryRect.y + (COLORSIZE * 2);
+				for (int i = 0; i < context->num; i++) {
+					contextRect.y = anchor + i + (i * contextRect.h);
+					if (mx < LEFTBARWIDTH && contextRect.y < my
+					    && my < contextRect.y + contextRect.h) {
 						buf->selcontext = i;
 					}
 				}
@@ -694,7 +696,9 @@ SDL_bool click(SDL_Renderer * rend, SDL_Texture * font, limonada * global, menub
 					linepx = px;
 					linepy = py;
 					linec = color;
-					rectsecc = button==SDL_BUTTON_LEFT ? buf->secondary : buf->primary;
+					rectsecc =
+					    button ==
+					    SDL_BUTTON_LEFT ? buf->secondary : buf->primary;
 				}
 				break;
 			case TOOL_LINE:
@@ -807,7 +811,7 @@ void setupCursors()
 
 void setupToolContexts()
 {
-	for (int i = 0; i<10; i++) {
+	for (int i = 0; i < 10; i++) {
 		contexts[i] = NULL;
 	}
 	MAKE_CONTEXT(TOOL_RECT, 2);
@@ -825,7 +829,7 @@ void setupToolContexts()
 	contexts[TOOL_ERASE]->entries[0] = " \xfe 4";
 	contexts[TOOL_ERASE]->entries[1] = " \xfe 6";
 	contexts[TOOL_ERASE]->entries[2] = " \xfe 8";
-	contexts[TOOL_ERASE]->entries[3] = " \xfe""10";
+	contexts[TOOL_ERASE]->entries[3] = " \xfe" "10";
 	/* http://dilldoe.org/images/Lines.jpg */
 	MAKE_CONTEXT(TOOL_LINE, 5);
 	contexts[TOOL_LINE]->entries[0] = " \xb3 1";
@@ -930,33 +934,35 @@ default:
 				UPDATEPXPY;
 				SDL_SetRenderDrawColor(rend, UNWRAP_COL(linec));
 				if (buf->tool == TOOL_LINE) {
-					SDL_RenderDrawLine(rend, (linepx * buf->zoom) + LEFTBARWIDTH,
-							   (linepy * buf->zoom) + TOPBARHEIGHT, mx, my);
+					SDL_RenderDrawLine(rend,
+							   (linepx * buf->zoom) + LEFTBARWIDTH,
+							   (linepy * buf->zoom) + TOPBARHEIGHT, mx,
+							   my);
 				} else if (buf->tool == TOOL_RECT) {
 					int rx, ry, rw, rh;
 					int mpx = (linepx * buf->zoom) + LEFTBARWIDTH;
 					int mpy = (linepy * buf->zoom) + TOPBARHEIGHT;
-					if (mx>=mpx) {
+					if (mx >= mpx) {
 						rx = mpx;
-						rw = mx-mpx;
+						rw = mx - mpx;
 					} else {
 						rx = mx;
-						rw = mpx-mx;
+						rw = mpx - mx;
 					}
-					if (my>=mpy) {
+					if (my >= mpy) {
 						ry = mpy;
-						rh = my-mpy;
+						rh = my - mpy;
 					} else {
 						ry = my;
-						rh = mpy-my;
+						rh = mpy - my;
 					}
-					if (rx<LEFTBARWIDTH) {
+					if (rx < LEFTBARWIDTH) {
 						rx = LEFTBARWIDTH;
-						rw = mpx-rx;
+						rw = mpx - rx;
 					}
-					if (ry<TOPBARHEIGHT) {
+					if (ry < TOPBARHEIGHT) {
 						ry = TOPBARHEIGHT;
-						rh = mpy-ry;
+						rh = mpy - ry;
 					}
 					rectToolRect.x = rx;
 					rectToolRect.y = ry;
@@ -1035,10 +1041,8 @@ default:
 							oy = iy;
 							iy += LETHEIGHT;
 							if (oy <= my && my <= iy) {
-								if (m->
-								    submenus[m->
-									     vis]->callbacks[j] !=
-								    NULL) {
+								if (m->submenus[m->vis]->
+								    callbacks[j] != NULL) {
 									int sel = m->vis;
 									m->vis = -1;
 									running =
@@ -1097,14 +1101,17 @@ default:
 							else if (epy < 0)
 								epy = 0;
 
-							int x1 = epx<linepx ? epx : linepx;
-							int x2 = epx>linepx ? epx : linepx;
-							int y1 = epy<linepy ? epy : linepy;
-							int y2 = epy>linepy ? epy : linepy;
+							int x1 = epx < linepx ? epx : linepx;
+							int x2 = epx > linepx ? epx : linepx;
+							int y1 = epy < linepy ? epy : linepy;
+							int y2 = epy > linepy ? epy : linepy;
 							if (buf->selcontext == 1) {
-								bufferDoRectFill(buf, x1, y1, x2, y2, rectsecc, linec);
+								bufferDoRectFill(buf, x1, y1, x2,
+										 y2, rectsecc,
+										 linec);
 							} else {
-								bufferDoRectOutline(buf, x1, y1, x2, y2, linec);
+								bufferDoRectOutline(buf, x1, y1, x2,
+										    y2, linec);
 							}
 
 							bufferEndUndo(buf);

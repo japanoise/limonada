@@ -95,9 +95,10 @@ void bufferDoFloodFill(buffer * buf, int px, int py, SDL_Color new);
 
 void bufferDoFloodFillDither(buffer * buf, int px, int py, SDL_Color a, SDL_Color b);
 
-void bufferDoRectOutline(buffer *buf, int x1, int y1, int x2, int y2, SDL_Color color);
+void bufferDoRectOutline(buffer * buf, int x1, int y1, int x2, int y2, SDL_Color color);
 
-void bufferDoRectFill(buffer *buf, int x1, int y1, int x2, int y2, SDL_Color color, SDL_Color border);
+void bufferDoRectFill(buffer * buf, int x1, int y1, int x2, int y2, SDL_Color color,
+		      SDL_Color border);
 
 SDL_Color bufferGetColorAt(buffer * buf, int x, int y);
 #endif
