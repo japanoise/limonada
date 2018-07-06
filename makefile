@@ -28,7 +28,7 @@ embed: embed.o
 	$(CC) -o $@ $^
 
 $(PROGNAME).zip: $(PROGNAME).exe
-	zip $@ $^ *.dll
+	zip -r $@ $^ *.dll lib
 
 clean:
 	rm -rf *.o
