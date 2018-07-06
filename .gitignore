@@ -4,3 +4,5 @@ embed
 *.exe
 *.dll
 *.zip
+.vscode
+lib
