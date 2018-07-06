@@ -45,10 +45,10 @@ typedef struct {
 	StrSlice *name;
 	unsigned char *filename;
 	unsigned int zoom;
-	unsigned int panx;
-	unsigned int pany;
-	unsigned int sizex;
-	unsigned int sizey;
+	int panx;
+	int pany;
+	int sizex;
+	int sizey;
 	unsigned int datachannels;
 	unsigned char *data;
 	unsigned char changedp;
