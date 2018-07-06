@@ -45,7 +45,12 @@ static void update_preview_cb(GtkFileChooser * file_chooser, gpointer data)
 	preview = GTK_WIDGET(data);
 	filename = gtk_file_chooser_get_preview_filename(file_chooser);
 
-	pixbuf = gdk_pixbuf_new_from_file_at_size(filename, 128, 128, NULL);
+	GError *err = NULL;
+	pixbuf = gdk_pixbuf_new_from_file_at_size(filename, 256, 256, &err);
+	if (err != NULL) {
+		fprintf (stderr, "Unable to read file: %s\n", err->message);
+		g_error_free (err);
+	}
 	have_preview = (pixbuf != NULL);
 	g_free(filename);
 
