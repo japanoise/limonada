@@ -7,6 +7,7 @@
 #include <string.h>
 #include "platform.h"
 #include "buffer.h"
+#include "gui.h"
 #define STBI_NO_JPEG		/* Jaypegs in a sprite editor? NOPE. */
 #include "stb_image.h"
 
@@ -404,4 +405,115 @@ SDL_Color bufferGetColorAt(buffer * buf, int x, int y)
 	if (buf->datachannels == STBI_rgb_alpha)
 		ret.a = buf->data[index + 3];
 	return ret;
+}
+
+buffer *makeNewBuffer(SDL_Renderer * rend, SDL_Texture * font)
+{
+	SDL_Rect sizexbox = {10+(8*LETWIDTH), 10, 8*LETWIDTH, 2+LETHEIGHT};
+	SDL_Rect sizeybox = {10+(8*LETWIDTH), sizexbox.y+sizexbox.h+10, 8*LETWIDTH, 2+LETHEIGHT};
+	SDL_Rect okButton = {10, sizeybox.y+sizeybox.h+10, 4*LETWIDTH, 2+LETHEIGHT};
+	SDL_Rect cancelButton = {20+okButton.w, sizeybox.y+sizeybox.h+10, 8*LETWIDTH, 2+LETHEIGHT};
+	char sizexstr[10];
+	char sizeystr[10];
+	for (int i = 0; i<10; i++) {
+		sizexstr[i] = '\0';
+		sizeystr[i] = '\0';
+	}
+	int sizexw = 0;
+	int sizeyw = 0;
+	int focused = 0;
+	SDL_Event event;
+
+	for (;;) {
+		BGCOL;
+		SDL_RenderClear(rend);
+		FGCOL;
+		SDL_RenderDrawRect(rend, &sizexbox);
+		SDL_RenderDrawRect(rend, &sizeybox);
+		SDL_RenderDrawRect(rend, &okButton);
+		SDL_RenderDrawRect(rend, &cancelButton);
+		drawText(rend, "Width:", font, 10, sizexbox.y+1);
+		drawText(rend, sizexstr, font, sizexbox.x+1, sizexbox.y+1);
+		drawText(rend, "Height:", font, 10, sizeybox.y+1);
+		drawText(rend, sizeystr, font, sizeybox.x+1, sizeybox.y+1);
+		drawText(rend, "OK", font, okButton.x+LETWIDTH, okButton.y+1);
+		drawText(rend, "Cancel", font, cancelButton.x+LETWIDTH, cancelButton.y+1);
+		if (focused == 0) {
+			SDL_RenderDrawLine(rend, sizexbox.x + 1 + (sizexw*LETWIDTH), sizexbox.y,
+				sizexbox.x + 1 + (sizexw*LETWIDTH), sizexbox.y+sizexbox.h-1);
+		} else {
+			SDL_RenderDrawLine(rend, sizeybox.x + 1 + (sizeyw*LETWIDTH), sizeybox.y,
+				sizeybox.x + 1 + (sizeyw*LETWIDTH), sizeybox.y+sizeybox.h-1);
+		}
+		SDL_RenderPresent(rend);
+
+		while (SDL_PollEvent(&event)) {
+			switch (event.type) {
+			case SDL_QUIT:
+				return NULL;
+
+			case SDL_MOUSEBUTTONUP:;
+				int mx = event.button.x;
+				int my = event.button.y;
+				if (INSIDE_RECT(sizexbox, mx, my)) focused = 0;
+				else if (INSIDE_RECT(sizeybox, mx, my)) focused = 1;
+				else if (INSIDE_RECT(cancelButton, mx, my)) return NULL;
+				else if (INSIDE_RECT(okButton, mx, my) && sizexw>0 && sizeyw>0) {
+					buffer * retval = makeBuffer("untitled");
+					retval->sizex = atoi(sizexstr);
+					retval->sizey = atoi(sizeystr);
+					retval->datachannels = 4;
+					retval->data = malloc((retval->sizex*retval->sizey)*4);
+					for (int i = 0; i < (retval->sizex*retval->sizey)*4; i++) {
+						retval->data[i] = 0xFF;
+					}
+					return retval;
+				}
+				break;
+
+			case SDL_KEYUP:;
+				char add;
+				if (event.key.keysym.sym == SDLK_BACKSPACE) {
+					if (focused == 0) {
+						if (sizexw>0) {
+							sizexw--;
+							sizexstr[sizexw] = '\0';
+						}
+					} else {
+						if (sizeyw>0) {
+							sizeyw--;
+							sizeystr[sizeyw] = '\0';
+						}
+					}
+					break;
+				}
+				else if (event.key.keysym.sym == SDLK_TAB) {
+					focused ^= 1;
+					break;
+				} else if (event.key.keysym.sym == SDLK_0) add = '0';
+				else if (event.key.keysym.sym == SDLK_1) add = '1';
+				else if (event.key.keysym.sym == SDLK_2) add = '2';
+				else if (event.key.keysym.sym == SDLK_3) add = '3';
+				else if (event.key.keysym.sym == SDLK_4) add = '4';
+				else if (event.key.keysym.sym == SDLK_5) add = '5';
+				else if (event.key.keysym.sym == SDLK_6) add = '6';
+				else if (event.key.keysym.sym == SDLK_7) add = '7';
+				else if (event.key.keysym.sym == SDLK_8) add = '8';
+				else if (event.key.keysym.sym == SDLK_9) add = '9';
+				else break;
+				if (focused == 0) {
+					if(sizexw < 8) {
+						sizexstr[sizexw] = add;
+						sizexw++;
+					}
+				} else {
+					if(sizeyw < 8) {
+						sizeystr[sizeyw] = add;
+						sizeyw++;
+					}
+				}
+				break;
+			}
+		}
+	}
 }

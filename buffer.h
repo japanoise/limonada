@@ -101,4 +101,6 @@ void bufferDoRectFill(buffer * buf, int x1, int y1, int x2, int y2, SDL_Color co
 		      SDL_Color border);
 
 SDL_Color bufferGetColorAt(buffer * buf, int x, int y);
+
+buffer *makeNewBuffer(SDL_Renderer * rend, SDL_Texture * font);
 #endif

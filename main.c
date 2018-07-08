@@ -97,6 +97,15 @@ SDL_bool actionRedo(SDL_Renderer * rend, SDL_Texture * font, limonada * global)
 	return SDL_TRUE;
 }
 
+SDL_bool actionNew(SDL_Renderer * rend, SDL_Texture * font, limonada * global)
+{
+	buffer * buf = makeNewBuffer(rend, font);
+	if (buf != NULL) {
+		global->curbuf = appendBuffer(global->buffers, buf);
+	}
+	return SDL_TRUE;
+}
+
 SDL_bool actionOpen(SDL_Renderer * rend, SDL_Texture * font, limonada * global)
 {
 	char *fn = fileBrowse(rend, font, getenv("HOME"), 0);
@@ -906,11 +915,12 @@ default:
 	my = -1;
 	char *titles[] = { "File", "Edit", "Help" };
 	menubar *m = makeMenuBar(titles, 3);
-	char *fileentries[] = { "Open", "Import", "Save", "Export", "Quit" };
-	m->submenus[0] = makeSubmenu(fileentries, 5);
-	m->submenus[0]->callbacks[0] = *actionOpen;
+	char *fileentries[] = { "New", "Open", "Save", "Quit" };
+	m->submenus[0] = makeSubmenu(fileentries, 4);
+	m->submenus[0]->callbacks[0] = *actionNew;
+	m->submenus[0]->callbacks[1] = *actionOpen;
 	m->submenus[0]->callbacks[2] = *actionSave;
-	m->submenus[0]->callbacks[4] = *actionQuit;
+	m->submenus[0]->callbacks[3] = *actionQuit;
 	char *editentries[] = { "Undo", "Redo", "Copy", "Paste" };
 	m->submenus[1] = makeSubmenu(editentries, 4);
 	m->submenus[1]->callbacks[0] = *actionUndo;
