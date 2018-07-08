@@ -164,10 +164,13 @@ SDL_bool actionSave(SDL_Renderer * rend, SDL_Texture * font, limonada * global)
 
 		if (strcmp(ext, ".PNG") == 0) {
 			stbi_write_png(fn, buf->sizex, buf->sizey, buf->datachannels, buf->data, 0);
+			buf->saveUndo = buf->undoList;
 		} else if (strcmp(ext, ".TGA") == 0) {
 			stbi_write_tga(fn, buf->sizex, buf->sizey, buf->datachannels, buf->data);
+			buf->saveUndo = buf->undoList;
 		} else if (strcmp(ext, ".BMP") == 0) {
 			stbi_write_bmp(fn, buf->sizex, buf->sizey, buf->datachannels, buf->data);
+			buf->saveUndo = buf->undoList;
 		} else {
 			const SDL_MessageBoxButtonData buttons[] = {
 				{SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "OK"},
@@ -290,6 +293,10 @@ void drawTabBar(SDL_Renderer * rend, SDL_Texture * font, limonada * global, menu
 		drawText(rend, bufname->String, font, ix + 2, botanchor - LETHEIGHT);
 		ox = ix;
 		ix += (bufname->len + 1) * LETWIDTH + 2;
+		if(bufferIsDirty(global->buffers->data[i])) {
+			drawText(rend, "*", font, ix-LETWIDTH, botanchor-LETHEIGHT);
+			ix += LETWIDTH;
+		}
 		SDL_RenderDrawLine(rend, ix - 1, botanchor - LETHEIGHT - 1, ix - 1, botanchor);
 		if (i == global->curbuf) {
 			SDL_RenderDrawLine(rend, ox, botanchor - 2, ix - 1, botanchor - 2);

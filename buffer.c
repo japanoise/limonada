@@ -314,7 +314,7 @@ void bufferPencil(buffer * buf, int px, int py, SDL_Color color)
 
 int bufferIsDirty(buffer * buf)
 {
-	return buf->undoList == buf->saveUndo;
+	return buf->undoList != buf->saveUndo;
 }
 
 void bufferStartUndo(buffer * buf)
@@ -352,6 +352,9 @@ void bufferDoUndo(buffer * buf)
 		}
 		buf->undoList = buf->undoList->prev;
 	} while (buf->undoList->type != StartUndo);
+	if (buf->saveUndo==NULL && buf->undoList->prev==NULL) {
+		buf->saveUndo = buf->undoList;
+	}
 }
 
 void bufferDoRedo(buffer * buf)
