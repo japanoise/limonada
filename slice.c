@@ -6,7 +6,7 @@ StrSlice *MakeSlice(char *str)
 {
 	StrSlice *ret = malloc(sizeof(StrSlice));
 	ret->len = strlen(str);
-	ret->String = malloc(ret->len);
+	ret->String = malloc(ret->len+1);
 	strcpy(ret->String, str);
 	return ret;
 }
